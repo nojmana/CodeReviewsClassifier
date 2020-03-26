@@ -1,0 +1,166 @@
+Not sure what happened here but it shouldn't be a new file.
+"Initial date should be the year the file was originally authored, please update to `2018`"
+Please add a newline at the end of the file
+Please fill in this README section on how to use the .copyrightignore file
+fixed
+fixed
+I think these were examples just for testing purposes ^ and should be removed.
+"Not sure whether you wanted all of them removed but have done so. 
+We can add others back if needed."
+I expect copyrightCheck should be copyrightignore
+The word `root` is repeated twice
+example uses `pipelines` while description uses `pipeline`
+example uses `.ignore` while description uses `ignore`
+"Examples 1 and 2 quote the directory and file names, the remaining examples do not."
+Why ignore .copyrightignore? It has a copyright.
+The .copyrightignore file is used by the copyrightCheck so that statement is correct.
+Removed 2nd root
+Updated to use `pipelines`
+Updated to specify `.ignore`
+"OK, will remove the `.copyrightignore` file, but this then leaves the file empty other than the comments. Do you have any files / paths that should be added to ignore."
+"> Do you have any files / paths that should be added to ignore.
+
+I believe so, any file that doesn't already have a copyright. I could write/run a little code later to produce a list."
+I'm fine with an initially blank file. Pete or others can add to it in the future but at least the template is there with instructions.
+"I found 389 OpenJ9 files without a copyright, but since these files tend not to be modified, I don't think there is any rush to add ignores for any of them. I'm happy to deliver a blank file in this PR and modify it later."
+This isn't reasonable: it will break all other platforms.
+I don't think this is an issue. As far as I am aware the git-encoding is only recognised and used by the version of git that is available from rocket software. The tests I have done on other platforms as well as the CI job that was run against this PR (on a Linux machine) all worked successfully.
+I read some more about git attributes: it seems you're right that unknown attributes will just be ignored.
+This is redundant - it's just the defauls set above.
+All text files should have a final newline ('Y' should *not* be the last character).
+"OK, will try without these.
+Not sure why these were added if the default should have set them correctly.
+It may be that we just wanted to ensure these were encoded correctly. "
+"Why do `runtime/gc_glue_java/*.c*` and `runtime/gc_glue_java/*.h*` need special treatment, but not other C/C++ source files? What, if any, changes will be required for OMR?"
+"Why do .cpp/.hpp files in runtime/gc_glue_java need special treatment? Can they not be subject to the default which applies to the other C/C++ source files throughout the rest of the source tree? If there's a good explanation, please add it as a comment in this file; otherwise please remove these redundant lines."
+Please remove this comment.
+Can these not also be subject to the default text file rules above?
+I don't think so. These are set in the default .gitattributes file that we initially got.
+"OK, will do."
+"There must have been a reason these were added. 
+Will remove and see whether it still works as expected."
+"When you get to a final set of encoding mappings, could you please update this comment so it is accurate?"
+"Have changed the comment to be generic.  
+There is no point listing all the files that are changed as they are specifically listed in the file. 
+Hopefully this is the last change that you require and this PR can be OK'ed and Merged."
+"We may want to wrap some of these in `<!---` and `-->` so they're displayed as comments in case the issue author forgets to delete them. We can also introduce some sections. For example:
+
+---
+### Failure link
+<!--- Replace this with a link to the failing test case. If the link is internal, instead include which test suite (functionality, system, etc), platform, JDK version, build level. -->
+
+### Output from the failure
+<!--- Place the output from the failure, including test name withing the triple back-ticks below -->
+```
+```
+
+"
+There is some risk that a user would put text inside the comments. I've added sections and introduced additional formatting.
+can you please revert the changes in this file
+"Is this directory normally at the root of the working copy? If so, it should be `/.vscode/` here. Please also add a comment so it's clear it's not related to tests."
+updated... the tool automatically added it without the `/` which I would have preferred to keep but convention in this file says to add it so I did
+Is the hack actually misspelled? (Two `R`s)
+"Sadly, that matches what's in the tr.source makefiles: https://github.com/eclipse/openj9/blob/master/runtime/tr.source/makefile.ftl 
+
+(edited to add: and in the rest of our code... see https://github.com/eclipse/openj9/search?utf8=✓&q=UMA_WINDOWS_PARRALLEL_HACK&type=)"
+![facepalm](https://media.giphy.com/media/3og0INyCmHlNylks9O/giphy.gif)
+We should stop specifying `-openj9-branch` since we really only care about `-openj9-sha`
+"I suppose it doesn't really matter. `$TRAVIS_BRANCH=master` and the default is `master` so it doesn't really change anything. If at some point the get_source script changes its default, we would probably want `TRAVIS_BRANCH` instead, although it doesn't really matter because he checkout the SHA anyways."
+Any reason to remove the version information from the file name?
+"Not really, and I was just thinking of putting that back in to make it obvious.  You're comment seals it."
+"The ccache commands were removed, is this intentional?"
+This comment was lost.
+This comment was lost.
+Fixed
+Why two ccache lines instead of 1?  Can you add a comment to explain what / why these options are being used?
+"I suppose there is no real reason for having them in separate command invocation, other than the fact that they are logically separate actions. The `-M 1G` just sets the max cache size to 1GB (the default is 512MB, and just building the vm once puts the cache usage at 517MB)"
+This change doesn't belong in this PR.
+"What does `FindJava` do?  Is it something we authored?  
+
+The root of my concern is that we want to be able to specify the Java being used to ensure it's the same bootjdk used by the rest of the build."
+"It is a built in module from cmake. you can point it to a specific java by setting `JAVA_HOME`
+https://cmake.org/cmake/help/v3.4/module/FindJava.html"
+I think this should use the bootjdk as configured in the extension project rather than the default for the build machine.
+I would rather this errors out than pick a random java
+"Ultimately, this is the same behavior that we have in the [makefiles](https://github.com/eclipse/openj9/blob/01f3a1c977a8fc5b06de4b0dcc4b4745f1796e8b/runtime/buildtools.mk#L49), and in the openjdk [autoconf](https://github.com/ibmruntimes/openj9-openjdk-jdk11/blob/d42cd0d94f7e017c1b3fbcb748cfecce81e15801/make/autoconf/boot-jdk.m4#L43)"
+This code is downstream from the openjdk autoconf.  We should never get here without having set the bootjdk
+"@dnakamura If this gets dealt with, I think it's ready to merge"
+@DanHeidinga  How would you feel about wrapping this behavior up in a flag? ie J9VM_FORCE_JDK_SEARCH or something. I'm thinking of the case of the jit linter. To run properly it needs to generate all the various header files. The easiest way to do that is to just run cmake outside of the full openjdk build. Its not clear what the proper value of BOOT_JDK should be
+"You raise a good point.  I hadn't thought of the jit linter.
+
+I was about to say it's not unreasonable to force it to pick a JDK but it kind of is.... That extra barrier isn't needed."
+"Maybe ...such as documentation only changes, to avoid unnecessarily wasting the project's build resources.
+
+?"
+@pshipton unfortunately I don't think this will work. https://help.github.com/articles/closing-issues-using-keywords/ states that the keyword must be followed by the issue number. The colon here will mess this up and GitHub won't recognize it.
+Change lftm. Although I think the example commit message below is a little silly as it refs the issue # twice.
+The example is just to demonstrate the different ways of referring to an issue.  Not a best practice :)
+"`and there must not be a blank line following the footer.`  Isn't this covered by the text a few lines down?
+
+>Remember, if a blank line is found anywhere after the `Signed-off-by` line, the
+`Signed-off-by:` will be considered outside of the footer, and will fail the
+automated Signed-off-by validation"
+"Yes, just reinforces the previous sentence. I wanted to keep it concise and simple. I'm actually in favor of removing the ""Remember, if a blank..."" paragraph as it's to verbose. Thoughts?"
+I don't believe this is necessary - both Closes and Signed off can be part of the footer.
+https://github.com/eclipse/openj9/pull/1636#issuecomment-395081510 seems to imply otherwise. @IBMJimmyk can you validate the correctness of your comment?
+"Actually @DanHeidinga there is a clear example of the check failing in https://github.com/eclipse/openj9/pull/2098. You can see the failure output (https://ci.eclipse.org/openj9/job/PullRequest-SignedOffByCheck-OpenJDK10/244/):
+
+```
+13:32:51 ###################################
+[Pipeline] echo
+13:32:55 FAILURE - The following commits appear to have an incorrect sign-off
+[Pipeline] echo
+13:33:02 commit afc2c20e928648a6277b2d17f5eebd01b2e75699
+13:33:02 Author: Daniel Hong <daniel.hong@live.com>
+13:33:02 Date:   Thu May 31 09:55:11 2018 -0400
+13:33:02 
+13:33:02     Re-enable toLowerCase/toUpperCase acceleration
+13:33:02     
+13:33:02     Modify API call so that caseConversionHelper recieves
+13:33:02     underlying arrays and length of string.
+13:33:02     
+13:33:02     Closes: #1934
+13:33:02     Signed-off-by: Daniel Hong <daniel.hong@live.com>
+[Pipeline] echo
+13:33:05 ###################################
+```
+
+So we do in fact need a new line between the ""Closes"" and ""Signed-off-by"" tags in the footer."
+Note the PR referenced has since been fixed up but I've linked the failing job in the above comments. It's easily reproducible as well.
+That just means the check we are implementing hasn't been implemented correctly. Its not the Eclipse ip-validation which was failing.
+So do we need an issue against our own check to handle this case and close this PR?
+"There already is an issue open, the check is WIP and being testing on the OpenJ9 repo. 
+https://github.com/ibmruntimes/openj9-openjdk-jdk9/issues/58#issuecomment-395229037
+https://github.com/eclipse/openj9/pull/1941
+
+Yes I think we can close this PR."
+"I don't think we need to add anything below here, the requirement is only to add the above copyright and permission notice."
+"Please just call it musl and only include below what is between the horizontal lines, but remove the lines."
+Done.
+Done.
+Done.
+Done
+"The license shouldn't be translated, it should remain in English."
+"`[JavaOne 2017: Open sourcing the IBM J9 Java Virtual Machine[`
+The final `[` should be a `]`"
+d'oh!
+secondard -> secondary
+"fixed, thanks for noticing"
+This and the following could use `${HOME}` instead of `/root`
+"The open issue is on jdk9, the jdk10 link is invalid."
+I don't think we need this warning any more.
+Not sure if this is still an issue for jdk10
+changed `/root` to `/<my_home_dir>`. `/<my_home_dir>` is already being used for `$HOME` in this file.
+"for JDK10, `bash configure --help` yields
+```
+  --with-default-make-target
+                          set the default make target [exploded-image]
+```
+So, this issue still persists in JDK10. I changed the link to point at the JDK9 issue."
+This still contains `/root`
+"Here is the explanation about `/root` I missed, which can be deleted."
+"@jdekonin said that we currently use Ansible files to setup AIX machines. `yum_install_aix-ppc64.txt` seems to be out of sync with the current Ansible files. So, we should keep the warning. 
+
+To test `yum shell yum_install_aix-ppc64.txt`, one needs to have a personal AIX machines. We can't test `yum shell yum_install_aix-ppc64.txt` on our local machines.  I was planning to open an issue to test `yum_install_aix-ppc64.txt` (jdk8, jdk9 and jdk10) once these changes are accepted."
+"Better fix this ref to `/root` as well, and mention `<my_home_dir>` will be `/root` when using docker."
+removed.

@@ -3,8 +3,7 @@ import urllib.request
 
 
 def get_pull_request_comments(user, project):
-    base_url = 'https://api.github.com/repos/'
-    project_url = base_url + user + '/' + project + '/pulls/49/comments'
+    project_url = 'https://api.github.com/repos/' + user + '/' + project + '/pulls/comments'
     print(project_url)
     with urllib.request.urlopen(project_url) as url:
         json_data = json.loads(url.read().decode())

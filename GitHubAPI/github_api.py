@@ -24,7 +24,7 @@ class GitHubApi:
         page_number = 0
         number_of_results_counter = 0
         while number_of_results_counter < self.number_of_results:
-            page_comments = self.get_pull_request_comments_one_page(page_number)
+            page_comments = self.get_pull_request_comments_one_page(page_number)[:self.number_of_results]
             if len(page_comments) == 0:
                 break
             number_of_results_counter += len(page_comments)

@@ -7,7 +7,7 @@ def write_to_csv(data, user, project):
     filename = 'data_' + user + '_' + project + '.csv'
 
     df = pandas.DataFrame(data)
-    df.to_csv(filename, index=False, header=False)
+    df.to_csv(filename, index=False, header=True)
 
 
 if __name__ == "__main__":

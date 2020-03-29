@@ -16,7 +16,8 @@ class GitHubApi:
             json_data = json.loads(requested_url.read().decode())
             page_comments = list()
             for comment_data in json_data:
-                page_comments.append(comment_data['body'])
+                page_comments.append({"FILENAME": comment_data["path"],
+                                      "BODY": comment_data["body"]})
             return page_comments
 
     def get_pull_request_comments_all_pages(self):

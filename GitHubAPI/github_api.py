@@ -11,6 +11,9 @@ class GitHubApi:
         self.auth_token = auth_token
 
     def authorization_header(self):
+        if self.auth_token == 'paste_here_your_personal_access_token':
+            print('No authorization token provided.')
+            return {}
         headers = {'Authorization': 'token %s' % self.auth_token}
         return headers
 

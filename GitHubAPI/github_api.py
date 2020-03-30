@@ -35,13 +35,17 @@ class GitHubApi:
         url = 'https://api.github.com/repos/' + self.user + '/' + self.project + \
               '/pulls/comments?per_page=' + str(per_page) + '&page=' + str(page_number)
         request = urllib.request.Request(url, headers=self.authorization_header())
+        print(url)
         with urllib.request.urlopen(request) as requested_url:
             json_data = json.loads(requested_url.read().decode())
             page_comments = list()
             for comment in json_data:
                 print('result nr', page_number * per_page + len(page_comments) + 1, 'out of', self.number_of_results)
-                page_comments.append({'FILENAME': comment['path'],
+                page_comments.append({'CHANGE-ID': comment['pull_request_review_id'],
+                                      'REVISION-ID':comment['commit_id'],
+                                      'FILENAME': comment['path'],
                                       'CR AUTHOR = PR AUTHOR': self.check_if_reviewer_is_author(comment),
+                                      'DIFF-HUNK': comment['diff_hunk'],
                                       'BODY': comment['body']})
                 if len(page_comments) >= self.number_of_results:
                     break

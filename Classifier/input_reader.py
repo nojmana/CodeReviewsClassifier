@@ -9,8 +9,8 @@ def read_csv(file_name):
 
 
 def read_excel(file_name, sheet_name):
-    data = pd.read_excel(file_name, sheet_name=sheet_name)
-    return data
+    data = pd.read_excel(file_name, sheet_name=sheet_name, index_col=None, usecols=['message', 'purpose'])
+    return data.to_dict(orient='record')
 
 
 def xlsx_to_csv(xlsx_filename):

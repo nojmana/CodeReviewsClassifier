@@ -1,6 +1,7 @@
 import sys
 import pandas
-from github_api import GitHubApi
+
+from GitHubAPI.github_api import GitHubApi
 
 
 def write_to_csv(data, user, project):

@@ -1,4 +1,5 @@
 import nltk
+import numpy as np
 
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
@@ -15,21 +16,31 @@ def preprocess_data(dataset):
                  "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't"]
     stop = [words for words in stop if words not in excluding]
 
-    for row in dataset:
-        message = row['message']
+    for index, message in enumerate(dataset):
         message = tokenizer.tokenize(message)
-        message = [stemmer.stem(w) for w in message if w not in stop]
-        row['message'] = " ".join(message)
+        dataset[index] = " ".join([stemmer.stem(w) for w in message if w not in stop])
 
 
-def create_bow(dataset):
-    bow = {}
-    for row in dataset:
-        words = nltk.word_tokenize(row['message'])
+def count_words_frequencies(dataset):
+    frequencies = {}
+    for message in dataset:
+        words = nltk.word_tokenize(message)
         for word in words:
-            if word not in bow.keys():
-                bow[word] = 1
+            if word not in frequencies.keys():
+                frequencies[word] = 1
             else:
-                bow[word] += 1
-    return bow
+                frequencies[word] += 1
+    return frequencies
 
+
+def create_bow_model(messages, frequent_words):
+    bow_model = []
+    for message in messages:
+        vector = []
+        for word in frequent_words:
+            if word in nltk.word_tokenize(message):
+                vector.append(1)
+            else:
+                vector.append(0)
+        bow_model.append(vector)
+    return np.asarray(bow_model)

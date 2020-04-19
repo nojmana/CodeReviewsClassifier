@@ -3,6 +3,7 @@ import random
 import pandas as pd
 import xlrd
 import csv
+from sklearn import preprocessing
 
 
 def read_csv(file_name):
@@ -35,3 +36,7 @@ def split_set(data_set, index, seed):
 
     split_index = int(index*len(data_set))
     return data_set[:split_index], data_set[split_index:]
+
+
+def encode_labels(y):
+    return preprocessing.LabelEncoder().fit_transform(y)

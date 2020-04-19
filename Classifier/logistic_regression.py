@@ -1,10 +1,9 @@
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix
 
 
 class LogisticRegressionImpl:
-    def __init__(self):
-        self.log_reg = LogisticRegression(random_state=0)
+    def __init__(self, seed):
+        self.log_reg = LogisticRegression(random_state=seed)
 
     def train(self, x, y):
         self.log_reg.fit(x, y)

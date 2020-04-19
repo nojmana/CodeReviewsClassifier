@@ -1,3 +1,5 @@
+import random
+
 import pandas as pd
 import xlrd
 import csv
@@ -25,3 +27,11 @@ def xlsx_to_csv(xlsx_filename):
     csv_file.close()
 
     return csv_name
+
+
+def split_set(data_set, index, seed):
+    random.seed(seed)
+    random.shuffle(data_set)
+
+    split_index = int(index*len(data_set))
+    return data_set[:split_index], data_set[split_index:]

@@ -2,6 +2,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score
+from sklearn.tree import DecisionTreeClassifier
 
 from Classifier.grid_display import GridSearch_table_plot
 
@@ -39,3 +40,16 @@ class Classifier:
         predictions = rfc.predict(self.test_bow_model)
         measure_efficiency(self.test_set_y, predictions)
 
+    def grid_search_random_forest(self):
+        param_grid = {'n_estimators': [1, 10, 100, 1000]}
+        grid_search = GridSearchCV(RandomForestClassifier(random_state=self.seed), param_grid, verbose=1)
+        grid_search.fit(self.train_bow_model, self.train_set_y)
+        predictions = grid_search.predict(self.test_bow_model)
+        measure_efficiency(self.test_set_y, predictions)
+        GridSearch_table_plot(grid_search, "n_estimators", graph=False, negative=False)
+
+    def decision_tree(self):
+        decision_tree = DecisionTreeClassifier(random_state=self.seed)
+        decision_tree.fit(self.train_bow_model, self.train_set_y)
+        predictions = decision_tree.predict(self.test_bow_model)
+        measure_efficiency(self.test_set_y, predictions)

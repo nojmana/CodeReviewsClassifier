@@ -21,3 +21,4 @@ if __name__ == "__main__":
     classifier = classifiers.Classifier(seed, train_bow_model, train_set_y, test_bow_model, test_set_y)
     classifier.logistic_regression()
     classifier.random_forest(100)
+    classifier.decision_tree()

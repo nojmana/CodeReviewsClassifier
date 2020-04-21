@@ -1,4 +1,3 @@
-
 from Classifier import input_reader, bag_of_words, classifiers
 
 gerrit_file = 'gerrit-wireshark-train-test-v4.xlsx'
@@ -21,3 +20,4 @@ if __name__ == "__main__":
 
     classifier = classifiers.Classifier(seed, train_bow_model, train_set_y, test_bow_model, test_set_y)
     classifier.logistic_regression()
+    classifier.random_forest(100)

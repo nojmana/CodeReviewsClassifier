@@ -1,3 +1,4 @@
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score
@@ -31,3 +32,10 @@ class Classifier:
         predictions = grid_search.predict(self.test_bow_model)
         measure_efficiency(self.test_set_y, predictions)
         GridSearch_table_plot(grid_search, "C", graph=False, negative=False)
+
+    def random_forest(self, estimators_number):
+        rfc = RandomForestClassifier(estimators_number, random_state=self.seed)
+        rfc.fit(self.train_bow_model, self.train_set_y)
+        predictions = rfc.predict(self.test_bow_model)
+        measure_efficiency(self.test_set_y, predictions)
+

@@ -1,11 +1,11 @@
 import sys
 import pandas
 
-from GitHubAPI.github_api import GitHubApi
+from github_api import GitHubApi
 
 
 def write_to_csv(data, user, project):
-    filename = 'data_' + user + '_' + project + '.csv'
+    filename = '../datasets/data_' + user + '_' + project + '.csv'
 
     df = pandas.DataFrame(data)
     df.to_csv(filename, index=False, header=True)

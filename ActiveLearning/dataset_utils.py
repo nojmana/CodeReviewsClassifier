@@ -1,3 +1,4 @@
+import pandas
 import pandas as pd
 from keras_preprocessing.sequence import pad_sequences
 from keras_preprocessing.text import one_hot
@@ -7,9 +8,17 @@ from nltk.tokenize import RegexpTokenizer
 
 datasets_path = '../datasets/'
 
+
 def read_csv(file_name):
     classification_data = pd.read_csv(datasets_path + file_name, encoding="ISO-8859-1", index_col=None)
     return classification_data.to_dict(orient='record')
+
+
+def write_to_csv(data, filename):
+    filename = '../datasets/' + filename
+
+    df = pandas.DataFrame(data)
+    df.to_csv(filename, index=False, header=True)
 
 
 def split_dataset_to_x_y(data_set):

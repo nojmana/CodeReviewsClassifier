@@ -6,10 +6,31 @@ from sklearn import preprocessing
 from modAL.models import ActiveLearner
 from modAL.uncertainty import uncertainty_sampling
 
+
 eclipse_input_file = 'data_eclipse_openj9.csv'
 eclipse_output_file = 'data_eclipse_openj9_classified.csv'
-encoder = preprocessing.LabelEncoder()
 
+
+def print_classes():
+    print('Classes:')
+    for index, encoded_class in enumerate(list(encoder.classes_)):
+        print(index, encoded_class)
+    print('\n')
+
+
+def get_new_label_from_user():
+    while True:
+        try:
+            entered_value = int(input('Label: '))
+            if entered_value not in (0, 1, 2, 3, 4):
+                raise ValueError
+            else:
+                return entered_value
+        except ValueError:
+            print('Incorrect input. Please enter an integer from 0 to 4')
+
+
+encoder = preprocessing.LabelEncoder()
 data_set = ActiveLearning.dataset_utils.read_csv(eclipse_input_file)
 
 train_set = []
@@ -37,24 +58,22 @@ pool_x_padded = ActiveLearning.dataset_utils.get_padded_sentences(pool_x_tokeniz
 queries_number = 50
 new_data_set = []
 
-
 estimator = LogisticRegression(random_state=40, multi_class='ovr', penalty='elasticnet', l1_ratio=0.1,
                                max_iter=1000000, solver='saga', C=0.1)
 learner = ActiveLearner(estimator=estimator, query_strategy=uncertainty_sampling,
                         X_training=train_set_x_padded, y_training=train_set_y_integer)
 
+
 for i in range(queries_number):
     print('\n\n', i + 1, 'from', queries_number)
+
+    print_classes()
+
     query_idx, query_inst = learner.query(pool_x_padded)
-
-    print('Classes:')
-    for index, encoded_class in enumerate(list(encoder.classes_)):
-        print(index, encoded_class)
-    print('\n')
-
+    print(pool_x_padded[int(query_idx)])
     print(pool_x[int(query_idx)])
-    new_label = np.array([input()], dtype=int)
 
+    new_label = np.array([get_new_label_from_user()], dtype=int)
     new_data_set.append({'message': pool_x[int(query_idx)], 'purpose': int(new_label)})
     learner.teach(query_inst.reshape(1, -1), new_label)
 

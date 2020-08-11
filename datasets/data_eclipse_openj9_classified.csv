@@ -1,0 +1,1598 @@
+message,purpose
+"No, we can't do that. As I pointed out previously in https://github.com/eclipse/omr/pull/5213#discussion_r428859832, the assert would not be a false positive in these instances. When using the full 64-bit result (as is done here when running on 64-bit systems), using `-0x8000` instead of `0x8000` will not end up with the correct bit pattern in the register and will result in incorrect behaviour.",discussion_participation
+"This assert does guarantee that the upper bits are unset, but thinking about it, I do agree that the type conversions involved can be a bit unintuitive. This works based on sign-extension to `intptr_t` after negation, so it only works because the upper bit of that mask is set after negating it. Perhaps using `(aValue & ~static_cast<uintptr_t>(0x7FFF0000))` instead would make this more clear?",discussion_participation
+"Considering that it looks like the post-P10 and pre-P10 versions of the inlined arraycopy code aren't actually sharing much code at all, perhaps they should be split into two separate functions?",discussion_participation
+"Minor typo:
+
+```suggestion
+   //    POWER8 potentially micro-coded unaligned integer accesses in LE mode,
+```",discussion_participation
+"If I'm reading this correctly, this comment seems to be referring to the removal of the env var checks above? Can you please clarify what this is saying?",change_request
+Since you're creating the expression yourself I suggest you create the optimal one now rather than relying on the code generator to do any sort of optimization on it. We have multiple code generators and creating trees that then need to be optimized in all of them is not such a good idea.,discussion_participation
+"My thinking here is that if a typical user sets `CC` the expectation will be that that everything is built with the requested compiler. If we don't allow `CC` to set `INTERP_GCC` they'll have to dig around to discover what's going on and override it themselves, which is an annoyance I wouldn't want to inflict.
+
+On the flip side anyone who's aware of `INTERP_GCC` can still set it themselves if they override `CC`, although it just occurred to me that they'd have to know what the hardcoded value was, so perhaps another var like `INTERP_GCC_IGNORE_CC` to control this behaviour makes sense, that way you can set your own value or keep the hardcoded value without knowing/caring what it is.",discussion_participation
+"When I tried to follow these instructions having quotes here, either around just the path being prepended or around the whole thing made OpenJDK's `configure` fail. Getting rid of the quotes made it happy.",discussion_participation
+"I noticed that this is how OpenJDK9 builds freetype as well, but it doesn't really do what was intended. This is building both a dynamic library and a static library, and later linking against the static library; the DLL is completely unused. The intention seems to be to build a DLL and the corresponding import library, not a static library. The MSVC linker produces import libraries for DLLs automatically when DLLs export things, but this version of freetype doesn't export any symbols. Looks like it's fixed in later versions and the public API is declared with `__declspec(dllexport)`, but for this one either the source would need to be modified or an exports file declaring some symbols would need to be fed to the linker.",discussion_participation
+"Aside from the quotes issue mentioned above that should be changed, yes they work.
+
+There's a bug in the OMR build files that bit me, but it depends on what your `PATH` is set to and I submitted a PR to them to fix that.",discussion_participation
+Sleep removed.,discussion_participation
+"Why does 3000 mean disabled? I'm assuming it's because the default count and bcount are also 3000. The symbolic constants for those values are `TR_DEFAULT_INITIAL_COUNT` and `TR_DEFAULT_INITIAL_BCOUNT` but even then it looks like the actual initial count we go with is determined at run time based on other options (e.g. quickstart), so if the goal is to keep these changes disabled for now by keeping the behaviour the same this might not be sufficient. It seems like these counts shouldn't be statically initialized, they should be initialized with whatever values we decide on for the default counts.",discussion_participation
+"The description for this change says we want to target ""methods belonging to bootstrap classes that are executed a lot during start-up but to a lesser degree during steady state"" but the check here is `isClassLibraryMethod()` which is basically every method from JCL and J9VM classes (regardless of when and how often it's executed) isn't it? Is there some other logic elsewhere that actually limits the behaviour to what was desired?",discussion_participation
+"Is there any concern that this could negatively affect programs that make heavy use of the JCL long after startup? E.g. programs that use `java/{util/math/io}` or something of that nature in their primary task? Since the functionality will be disabled until more performance measurements are done I don't think we need an answer to this now, but finding/measuring important programs that go against this assumption is probably a worthwhile data point.",discussion_participation
+"Does removing this mean that on zOS we'll be compiling ""important for start-up"" methods at AOT-warm now, where as before they were compiled at AOT-cold? Since the comment for this `#ifdef` says it's purpose is to reduce CPU consumption perhaps we need someone to clarify exactly what was desired. This patch should result in less CPU consumption when the important for start-up methods are in the cache, but more if they have to be compiled since they're now at a higher opt level.
+
+Is zOS OK with this change or do we really want to maintain the slightly different behaviour for it? Personally I'd prefer it if heuristics were the same on all platforms, it makes life easier for everyone in the long run, but I'm not qualified to comment on zOS issues.
+
+If ""tweaks"" like this need to exist they should be guarded with an option rather than an `#ifdef` since there is really nothing architecture-specific about the heuristic or the tweak and it would make it easier to know that the tweak even exists in the first place.
+
+Any comments @fjeremic and/or @joransiu?",discussion_participation
+"Looks like this comment is no longer needed right?
+
+```suggestion
+```",discussion_trigger
+"I checked that the hook was being called on the server and it is unfortunately, presumably because bootstrap classes are still loaded. There are various other JITaaS mode checks in that code so it seems to have been the case all along at least.
+
+Anyway I've moved the check into `ensureUnloadedAddressSetsAreInitialized()` instead to make sure the single persistent instances are never created on the server regardless of where it's called from.",discussion_participation
+"It should be since the source iterators are pointers and `std::distance()` can be calculated in constant time, but I've changed the caller to construct the vector with the exact required capacity to avoid even the initial expansion.",discussion_participation
+Done.,discussion_participation
+Done. The address set is allocated dynamically the first time the server processes unloaded classes for each client. The max size is transmitted from the client together with the initial set of ranges.,discussion_participation
+Done.,discussion_participation
+Done.,discussion_participation
+Done.,discussion_participation
+Done.,discussion_participation
+Are `_diagnosticThreadIndex` and `_compThreadIndex` supposed to be 0-based indices or a count of the number of threads? I see it them being used as both and it is a little confusing.,discussion_participation
+"Can you clarify why we have methods like `initializeCommonAOTRelocationHeader` and `dumpRelocationHeaderData` that manipulate the entire record, not just the header?
+
+In the previous case I was writing to both a header field and the record's data portion, and in this case I'm dumping the record's data, not the header.",discussion_participation
+Not sure what happened here but it shouldn't be a new file.,discussion_participation
+"Initial date should be the year the file was originally authored, please update to `2018`",discussion_participation
+Please add a newline at the end of the file,change_request
+Please fill in this README section on how to use the .copyrightignore file,change_request
+fixed,acknowledgement
+fixed,acknowledgement
+I think these were examples just for testing purposes ^ and should be removed.,discussion_participation
+"Not sure whether you wanted all of them removed but have done so. 
+We can add others back if needed.",discussion_trigger
+I expect copyrightCheck should be copyrightignore,discussion_participation
+The word `root` is repeated twice,discussion_trigger
+example uses `pipelines` while description uses `pipeline`,discussion_participation
+example uses `.ignore` while description uses `ignore`,discussion_participation
+"Examples 1 and 2 quote the directory and file names, the remaining examples do not.",discussion_participation
+Why ignore .copyrightignore? It has a copyright.,discussion_participation
+The .copyrightignore file is used by the copyrightCheck so that statement is correct.,discussion_trigger
+Removed 2nd root,discussion_participation
+Updated to use `pipelines`,acknowledgement
+Updated to specify `.ignore`,acknowledgement
+"> Do you have any files / paths that should be added to ignore.
+
+I believe so, any file that doesn't already have a copyright. I could write/run a little code later to produce a list.",discussion_participation
+"I found 389 OpenJ9 files without a copyright, but since these files tend not to be modified, I don't think there is any rush to add ignores for any of them. I'm happy to deliver a blank file in this PR and modify it later.",discussion_participation
+This isn't reasonable: it will break all other platforms.,discussion_participation
+I don't think this is an issue. As far as I am aware the git-encoding is only recognised and used by the version of git that is available from rocket software. The tests I have done on other platforms as well as the CI job that was run against this PR (on a Linux machine) all worked successfully.,discussion_participation
+I read some more about git attributes: it seems you're right that unknown attributes will just be ignored.,discussion_participation
+This is redundant - it's just the defauls set above.,change_request
+All text files should have a final newline ('Y' should *not* be the last character).,discussion_trigger
+"OK, will try without these.
+Not sure why these were added if the default should have set them correctly.
+It may be that we just wanted to ensure these were encoded correctly. ",discussion_participation
+"Why do `runtime/gc_glue_java/*.c*` and `runtime/gc_glue_java/*.h*` need special treatment, but not other C/C++ source files? What, if any, changes will be required for OMR?",discussion_participation
+"Why do .cpp/.hpp files in runtime/gc_glue_java need special treatment? Can they not be subject to the default which applies to the other C/C++ source files throughout the rest of the source tree? If there's a good explanation, please add it as a comment in this file; otherwise please remove these redundant lines.",discussion_participation
+Please remove this comment.,change_request
+Can these not also be subject to the default text file rules above?,discussion_participation
+I don't think so. These are set in the default .gitattributes file that we initially got.,discussion_participation
+"OK, will do.",discussion_participation
+"There must have been a reason these were added. 
+Will remove and see whether it still works as expected.",discussion_participation
+"When you get to a final set of encoding mappings, could you please update this comment so it is accurate?",change_request
+"Have changed the comment to be generic.  
+There is no point listing all the files that are changed as they are specifically listed in the file. 
+Hopefully this is the last change that you require and this PR can be OK'ed and Merged.",discussion_participation
+"We may want to wrap some of these in `<!---` and `-->` so they're displayed as comments in case the issue author forgets to delete them. We can also introduce some sections. For example:
+
+---
+### Failure link
+<!--- Replace this with a link to the failing test case. If the link is internal, instead include which test suite (functionality, system, etc), platform, JDK version, build level. -->
+
+### Output from the failure
+<!--- Place the output from the failure, including test name withing the triple back-ticks below -->
+```
+```
+
+",discussion_participation
+There is some risk that a user would put text inside the comments. I've added sections and introduced additional formatting.,discussion_participation
+"Since macos-10.15 can't work for jdk8, it needs to be removed.",discussion_participation
+Updated.,acknowledgement
+This part should be delivered to the openj9 repo as well.,discussion_participation
+"See my comment in issue #9570 - my thought was to have this action live as a standalone repo (like openj9-systemtest or openj9-website) as it may also be used by those who may to verify changes to openj9-omr, openjdk-tests, or the extensions repos.
+
+<img width=""774"" alt=""Screen Shot 2020-05-19 at 10 50 14 AM"" src=""https://user-images.githubusercontent.com/2836948/82342178-501b6f80-99bf-11ea-9ee6-a7638db9ce48.png"">
+",discussion_participation
+Done.,discussion_participation
+"The configure step is missing some arguments to be comparable with OpenJ9 builds.
+Currently: 
+```
+if (parseInt(version) > 8)  bootjdkConfigure = `--with-boot-jdk=${workDir}/bootjdk`
+bash configure --with-freemarker-jar=${workDir}/freemarker.jar ${bootjdkConfigure}`
+```
+
+Linux should also use:
+all: `--enable-jitserver --openssl-version=1.1.1g --with-openssl=fetched --enable-cuda --with-cuda=<path>`
+8: `--disable-zip-debug-info`
+
+Mac:
+all: `--openssl-version=1.1.1g --with-openssl=fetched --enable-openssl-bundling`
+8:
+`--with-xcode-path=.../Xcode4/Xcode.app --with-openj9-cc=.../clang --with-openj9-cxx=.../clang++ --with-openj9-developer-dir=.../Developer`
+`MACOSX_DEPLOYMENT_TARGET=10.9.0 SDKPATH=.../MacOSX10.8.sdk`
+
+Windows:
+all: `--openssl-version=1.1.1g --with-openssl=<path> --enable-openssl-bundling --enable-cuda -with-cuda=<path>`
+8: `--disable-zip-debug-info --with-freetype-include=.../freetype-2.5.3/include --with-freetype-lib=.../freetype-2.5.3/lib64`
+11+: `--with-toolchain-version=2017`",discussion_participation
+"Updated with Linux and Mac. For Windows will update when enabling. 
+https://github.com/sophia-guo/build-jdk-openj9/pull/10",discussion_participation
+"`--with-xcode-path=.../Xcode4/Xcode.app --with-openj9-cc=.../clang --with-openj9-cxx=.../clang++ --with-openj9-developer-dir=.../Developer MACOSX_DEPLOYMENT_TARGET=10.9.0 SDKPATH=.../MacOSX10.8.sdk` wasn't meant to be taken literally. The `...` needs to be replaced with a full path. For example, below are the actual commands that OpenJ9 uses, but the paths need to be correct for the machine used to build. Also MACOSX_DEPLOYMENT_TARGET and SDKPATH are environment variables, not configure options. Since JDK8 for Mac needs to build on a older OS version 10.11, probably it can't be built using a github action.
+
+`--with-xcode-path=/Users/jenkins/Xcode4/Xcode.app --with-openj9-cc=/Users/jenkins/Xcode7/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang --with-openj9-cxx=/Users/jenkins/Xcode7/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ --with-openj9-developer-dir=/Users/jenkins/Xcode7/Xcode.app/Contents/Developer`
+
+`SDKPATH=/Users/jenkins/Xcode4/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk`
+",discussion_participation
+macos-10.15 is the only available github-hosted Mac environment for now. And looks like if there will be more Mac versions it will be the newer version. That is saying if we are going to use github-hosted environment there will be no chance to build jdk8 on Mac. Maybe leave those code as comment as TODO.  When there is workable environment we can fix the correct path?,discussion_participation
+Sounds good.,discussion_participation
+Updated. https://github.com/sophia-guo/build-jdk-openj9/pull/12,acknowledgement
+"pull_request:
+    branches:
+      - master
+
+I know its still a WIP (thanks for getting this together so quickly!), a question: is default to master, or do you have to explicitly state only run this workflow on pull_requests to master (as shown in the snippet above)?",discussion_participation
+Updated to nightly as discussed. ,acknowledgement
+JDK8 only supports building on Mac 10.11,discussion_participation
+"Is this directory normally at the root of the working copy? If so, it should be `/.vscode/` here. Please also add a comment so it's clear it's not related to tests.",change_request
+updated... the tool automatically added it without the `/` which I would have preferred to keep but convention in this file says to add it so I did,discussion_participation
+Is the hack actually misspelled? (Two `R`s),discussion_participation
+"Sadly, that matches what's in the tr.source makefiles: https://github.com/eclipse/openj9/blob/master/runtime/tr.source/makefile.ftl 
+
+(edited to add: and in the rest of our code... see https://github.com/eclipse/openj9/search?utf8=?&q=UMA_WINDOWS_PARRALLEL_HACK&type=)",discussion_participation
+![facepalm](https://media.giphy.com/media/3og0INyCmHlNylks9O/giphy.gif),discussion_participation
+We should stop specifying `-openj9-branch` since we really only care about `-openj9-sha`,discussion_participation
+"I suppose it doesn't really matter. `$TRAVIS_BRANCH=master` and the default is `master` so it doesn't really change anything. If at some point the get_source script changes its default, we would probably want `TRAVIS_BRANCH` instead, although it doesn't really matter because he checkout the SHA anyways.",discussion_participation
+Any reason to remove the version information from the file name?,discussion_participation
+"Not really, and I was just thinking of putting that back in to make it obvious.  You're comment seals it.",acknowledgement
+"The ccache commands were removed, is this intentional?",discussion_participation
+This comment was lost.,acknowledgement
+Fixed,acknowledgement
+Why two ccache lines instead of 1?  Can you add a comment to explain what / why these options are being used?,change_request
+"I suppose there is no real reason for having them in separate command invocation, other than the fact that they are logically separate actions. The `-M 1G` just sets the max cache size to 1GB (the default is 512MB, and just building the vm once puts the cache usage at 517MB)",discussion_participation
+This change doesn't belong in this PR.,discussion_participation
+"What does `FindJava` do?  Is it something we authored?  
+
+The root of my concern is that we want to be able to specify the Java being used to ensure it's the same bootjdk used by the rest of the build.",discussion_participation
+"It is a built in module from cmake. you can point it to a specific java by setting `JAVA_HOME`
+https://cmake.org/cmake/help/v3.4/module/FindJava.html",discussion_participation
+I think this should use the bootjdk as configured in the extension project rather than the default for the build machine.,discussion_participation
+I would rather this errors out than pick a random java,discussion_participation
+"Ultimately, this is the same behavior that we have in the [makefiles](https://github.com/eclipse/openj9/blob/01f3a1c977a8fc5b06de4b0dcc4b4745f1796e8b/runtime/buildtools.mk#L49), and in the openjdk [autoconf](https://github.com/ibmruntimes/openj9-openjdk-jdk11/blob/d42cd0d94f7e017c1b3fbcb748cfecce81e15801/make/autoconf/boot-jdk.m4#L43)",discussion_participation
+This code is downstream from the openjdk autoconf.  We should never get here without having set the bootjdk,discussion_participation
+"@dnakamura If this gets dealt with, I think it's ready to merge",discussion_participation
+@DanHeidinga  How would you feel about wrapping this behavior up in a flag? ie J9VM_FORCE_JDK_SEARCH or something. I'm thinking of the case of the jit linter. To run properly it needs to generate all the various header files. The easiest way to do that is to just run cmake outside of the full openjdk build. Its not clear what the proper value of BOOT_JDK should be,discussion_participation
+"You raise a good point.  I hadn't thought of the jit linter.
+
+I was about to say it's not unreasonable to force it to pick a JDK but it kind of is.... That extra barrier isn't needed.",discussion_participation
+"Maybe ...such as documentation only changes, to avoid unnecessarily wasting the project's build resources.
+
+?",discussion_participation
+@pshipton unfortunately I don't think this will work. https://help.github.com/articles/closing-issues-using-keywords/ states that the keyword must be followed by the issue number. The colon here will mess this up and GitHub won't recognize it.,discussion_participation
+Change lftm. Although I think the example commit message below is a little silly as it refs the issue # twice.,discussion_participation
+The example is just to demonstrate the different ways of referring to an issue.  Not a best practice :),discussion_participation
+"Yes, just reinforces the previous sentence. I wanted to keep it concise and simple. I'm actually in favor of removing the ""Remember, if a blank..."" paragraph as it's to verbose. Thoughts?",discussion_participation
+I don't believe this is necessary - both Closes and Signed off can be part of the footer.,discussion_participation
+https://github.com/eclipse/openj9/pull/1636#issuecomment-395081510 seems to imply otherwise. @IBMJimmyk can you validate the correctness of your comment?,discussion_participation
+"Actually @DanHeidinga there is a clear example of the check failing in https://github.com/eclipse/openj9/pull/2098. You can see the failure output (https://ci.eclipse.org/openj9/job/PullRequest-SignedOffByCheck-OpenJDK10/244/):
+
+```
+13:32:51 ###################################
+[Pipeline] echo
+13:32:55 FAILURE - The following commits appear to have an incorrect sign-off
+[Pipeline] echo
+13:33:02 commit afc2c20e928648a6277b2d17f5eebd01b2e75699
+13:33:02 Author: Daniel Hong <daniel.hong@live.com>
+13:33:02 Date:   Thu May 31 09:55:11 2018 -0400
+13:33:02 
+13:33:02     Re-enable toLowerCase/toUpperCase acceleration
+13:33:02     
+13:33:02     Modify API call so that caseConversionHelper recieves
+13:33:02     underlying arrays and length of string.
+13:33:02     
+13:33:02     Closes: #1934
+13:33:02     Signed-off-by: Daniel Hong <daniel.hong@live.com>
+[Pipeline] echo
+13:33:05 ###################################
+```
+
+So we do in fact need a new line between the ""Closes"" and ""Signed-off-by"" tags in the footer.",discussion_participation
+Note the PR referenced has since been fixed up but I've linked the failing job in the above comments. It's easily reproducible as well.,discussion_participation
+That just means the check we are implementing hasn't been implemented correctly. Its not the Eclipse ip-validation which was failing.,discussion_participation
+So do we need an issue against our own check to handle this case and close this PR?,discussion_participation
+"There already is an issue open, the check is WIP and being testing on the OpenJ9 repo. 
+https://github.com/ibmruntimes/openj9-openjdk-jdk9/issues/58#issuecomment-395229037
+https://github.com/eclipse/openj9/pull/1941
+
+Yes I think we can close this PR.",discussion_participation
+"I don't think we need to add anything below here, the requirement is only to add the above copyright and permission notice.",change_request
+Done.,discussion_participation
+Done.,discussion_participation
+Done.,discussion_participation
+Done,discussion_participation
+"The license shouldn't be translated, it should remain in English.",discussion_participation
+"The implementation of this is identical to the ParentCustomClassLoader with only the name used in `loadClass` being different.
+
+Is there a reason to duplicate the class and the implementations of each method?
+",discussion_participation
+"A single CustomClassLoader would be sufficient if passed 1) its parent & 2) the name of the ""special class"" to check in `loadClass`.",discussion_trigger
+Fixed.,acknowledgement
+The reason is that a couple of methods related to module (e.g. Module.isExported()) are missing in the current build with b148.  Choosing the latest level is a safe way to ensure all methods of Module are handy for use in our code as we have no idea when they are provided.,discussion_participation
+"Unfortunately this is not documented in the API Spec but it was detected in failing JCK tests.
+This check is based on the explanation of Accessibility for the Module System at http://openjdk.java.net/projects/jigsaw/spec/sotms/
+
+2.4  Accessibility
+...
+Thus, even when a type is declared public, if its package is not exported in the declaration of its module then it will only be accessible to code in that module.",discussion_participation
+"the API document at http://download.java.net/java/jdk9/docs/api/java/lang/invoke
+/MethodHandles.Lookup.html#toString--  says:
+....
+If none of the above cases apply, it is the case that full access (public, module, package, private, and protected) is allowed. In this case, no suffix is added.
+<------ So there is no need to throw exception or assertion in this default case.
+
+",discussion_participation
+test/Jsr292/src/com/ibm/j9/jsr292/LookupInTests.java only works for Java 8 (829) and Java 9 with b148 in which case there is no UNCONDITIONAL bit added.  The test cases with MODULE/UNCONDITIONAL bit updated were placed at test/OpenJ9_Jsr_292_API/src/com/ibm/j9/jsr292/LookupInTests.java,discussion_participation
+Already explained as above,discussion_participation
+Updated the misleading comments.,acknowledgement
+"We need to call a few methods of Module (e.g. isExported) which are missing in the current build with b148. So the easiest way for us is to ensure the new code only works on openj9 (e.g. b175) rather then the current build (b148).
+
+To get all existing cases work on Java 8/b148,  all these tests in the original LookupInTests.java plus the required files were copied to a new test project called OpenJ9_Jsr_292_API as suggested by the FVT team. 
+
+As a result, test/Jsr292/src/com/ibm/j9/jsr292/LookupInTests.java only work for Java 8 (829) and Java 9 with b148, while test/OpenJ9_Jsr_292_API/src/com/ibm/j9/jsr292/LookupInTests.java only work on openJ9.
+
+The only difference of these two files is that all Module related test cases in OpenJ9_Jsr_292_API were updated to support MODULE/UNCONDITIONAL bit.",discussion_participation
+Comment added and code updated to directly check against PUBLIC_LOOKUP object (already verified in tests),discussion_participation
+Only a public lookup object holds PUBLIC | UNCONDITIONAL bit so checking these two bits should be sufficient but it never hurts to change to only check whether it is a public lookup.,discussion_participation
+"All these files were directly copied from the original jsr292 directory without any changes.
+So agreed and updated to use CustomClassLoader to avoid redundancy. 
+
+I prefer not to change the same files in the original jsr292 directory (for java 8 and java 9 with b148) as these files are used by other tests which are irrelevant to our code.",discussion_participation
+"Becasue the job every 15 minutes, and becasue the `CopyArtifact` step pulls the artifact from the last successful build, we need to archive the artifact every build.
+Although, I suppose if we don't have no new content there is no need to overwrite the file with the same SHA. The only other case would be if we failed to fetch the previous artifact, then we would get the default values, in which case we would have ""new content"" and we would write the file.
+So I think you are correct we should be safe to move it inside the `if`",discussion_participation
+Updated commit,acknowledgement
+"This code change bothered me earlier as I couldn't figure out why it was showing up as a change.... and the answer is whitespace.  This is one of the big reasons why I'm strongly opposed to this kind of formatting.
+
+Rather than this appearing as a single line of change - easy to review, easy to tell why it changed - it now looks like all 4 lines were modified.
+
+I'm not going to say it has to be changed, but will ask that this kind of alignment is avoided in future commits",discussion_participation
+This is likely an internal ticket number - can you remove it and add any necessary context to the code or the PR?,discussion_participation
+What does this featureId mean?,discussion_participation
+This is the Jazz work item for the refactoring of the Attach API.,discussion_participation
+Fixed.,acknowledgement
+I'm not a fan of this mixed all lower case with camelCase.  Can this be named `allowAttachSelfValue` for better readability?,discussion_participation
+Please use an OpenJ9 issue number rather than a internal Jazz #.,discussion_participation
+Should the test be printing this unconditionally or should it be using an existing logger framework?,discussion_participation
+Is there no better way to get a VIrtualMachine id?  Something without looping?,discussion_participation
+Why was it copied?  Is there a way to avoid duplicating the code?,discussion_participation
+We shouldn't be using SuppressWarnings.  Please fix the NLS issues.,discussion_participation
+Can you group the static finals with the other static finals?  It makes it easier to see what the actual mutable state is.,discussion_participation
+Please remove the `tgt` short form as the code uses a mix of that and `target`.   Using one consistently is better and the full word is better for readability,discussion_participation
+"Why use `ready()` here?  It returns false on an empty stream or if the read implementation might block.
+I could see a single `ready()` call and then use `readLine()` to loop... am I missing something here?",discussion_trigger
+Does this need to be wrapped in a `verbose` test?  Won't the logger.debug call determine whether it should be printed or not based on the configured logging level?,discussion_trigger
+"This really needs some comments to walk a reader of the code through.  I'm not sure what `sidecar` is, or why this code is structured the way it is.  Aim to make it obvious for a reader (or person debugging) to understand the code - especially as that may be future you a few months down the line =)",discussion_participation
+Can you add javadoc for each of these methods?  It looks like this method tries to recursively list all the files and directories under the java.io.tmpdir to the logger.debug() output.  Should it only be called if the logger.debug() level is enabled?,discussion_participation
+I don't think this is the right code.   I would expect a loop while readLine() is not returning null.,discussion_trigger
+same as above and in other places using ready().,same_as
+Please don't use SuppressWarnings.,change_request
+Can you explain the difference between src_latest and src_current?  I'm not aware of why there are two...,discussion_participation
+"Done, though I inserted an underscore before ""value"" to indicate that it's the value of allowAttachSelf.",discussion_participation
+"Playlist: updated.
+
+SelfAttacher:
+This isn't to get the vmID.  It's cycling waiting for the attach API to initialize.  There is OpenJ9 internal API to do that, but it's not portable.",discussion_participation
+"SelfAttacher is run as a child process whose stdout and stderr are captured by the TargetManager which can log it, though I don't bother doing so in this test.",discussion_participation
+Fixed.,acknowledgement
+"The original TargetManager is in Java8AndUp, which shares no OpenJ9 test code with Java9AndUp.  Maybe @smlambert or @llxia can suggest a better mechanism.",discussion_participation
+Done.,discussion_participation
+Done,discussion_participation
+"The intent is to grab as much of stderr as possible without blocking, in case the stdout closed but stderr stayed open.  Comment added.",discussion_participation
+"> especially as that may be future you a few months down the line =)
+I wrote this 9 years ago :-).
+
+Done.  Let me know if you want more.",discussion_participation
+"> Can you add javadoc for each of these methods? 
+Done.  Let me know if you want more explanation.
+
+>It looks like this method tries to recursively list all the files and directories under the java.io.tmpdir to the logger.debug() output. Should it only be called if the logger.debug() level is enabled?
+Actually, it lists the contents of /tmp/.com_ibm_tools_attach, which will be a few files for each Java process.  This method is mostly for post-failure analysis.",discussion_participation
+"As mentioned above, I don't want readline() to block.",discussion_trigger
+Okay.,acknowledgement
+This is a kludge to handle the API differences between the two JCL versions in the builds.,discussion_participation
+See above.,discussion_participation
+I don't think this actually stops readline from blocking - the stream is ready as soon as there are characters available.,discussion_participation
+Is ClassesThatShouldNotBeLoaded normalized so there is only one entry per class? If it is then this is fine. If there are duplicates we may need to cache the lookup result since the name lookup can be expensive.,discussion_participation
+"Currently, all optimizations that add to `ClassesThatShouldNotBeLoaded` will ensure duplicates are not added.",discussion_participation
+We get more streamlined code if we capture `enableSharingInSubstringWhenOffsetIsZero' in that it doesn't need to be negated in every use case.,discussion_participation
+"This becomes
+```
+enableSharingInSubstringWhenOffsetIsZero = enableCopyInSubstringWhenOffsetIsZeroProperty == null || enableCopyInSubstringWhenOffsetIsZeroProperty.equalsIgnoreCase(""false"");
+```",discussion_trigger
+Fixed in a44d52e.,acknowledgement
+"Fixed in a44d52e. Though it should be `...equalsIgnoreCase(""true"")`, right?",discussion_participation
+"equalsIgnoreCase(""false"") is correct because ""true"" or other values mean to enable copy.",discussion_participation
+"@pshipton this is the intent though. `String.enableSharingInSubstringWhenOffsetIsZero` should be `true` by default. The system property is only provided as a fallback in case users experience OOM issues in very rare cases outlined in the commit description.
+
+The intent of this change is not to alter the current behavior of any of the APIs, but to simply provide an alternative if a user does encounter issues described.",discussion_participation
+Ok then this looks ok,acknowledgement
+"@keithc-ca removed unnecessary convert function, thx.",discussion_participation
+Can you remove this added (blank) line?,discussion_trigger
+"done, thx",discussion_participation
+"I thought that we had some other test examples where there were differences between 829 and OpenJ9, where we moved the common code out for reuse by both to minimize duplication (like in Java8andUp).  @renfeiw is there an opportunity to do similar with this code to avoid bloating the repo with lots of duplication?",discussion_participation
+"We don't have a better way for this case right now. If we want share the same file without referencing across java projects, we need to place the new tests into the existing Jsr292 project. However, the Jsr292 project is excluded from openj9 currently. So the added tests will be excluded as well. We are working on a better way to exclude test, with that in place we will be able to handle this case in the future. ",discussion_participation
+"If this is expected to throw, it doesn't need the `Assert.assertEquals`.  The `mhFix.invoke` is sufficient.",discussion_trigger
+Two fail calls back to back,discussion_trigger
+The assertEquals isn't required here.,discussion_participation
+"This will need to be split into it's own test.  Otherwise, this will never be executed as the previous one will throw.",discussion_participation
+`assertEquals` not required here/,discussion_participation
+Everything after this is dead code.  Can you split it into another test?,discussion_participation
+Not sure why the original test case was written in this way. Already fixed.,discussion_participation
+Agreed and fixed.,acknowledgement
+Fixed at multiple places.,acknowledgement
+Updated.,acknowledgement
+Fixed.,acknowledgement
+Fixed.,acknowledgement
+Fixed.,acknowledgement
+Already split.,discussion_participation
+Already split.,discussion_participation
+@pshipton unfortunately I don't think this will work. https://help.github.com/articles/closing-issues-using-keywords/ states that the keyword must be followed by the issue number. The colon here will mess this up and GitHub won't recognize it.,discussion_participation
+typo,change_request
+typo,change_request
+"If this is only a build job, probably no test material archived.",discussion_participation
+"The purpose here for archiving the test source is to pass both the sdk and test material to the Test Jobs. That way we don't need to reclone it in the test job and we ensure we get the same source version as the build. We could not archive it and pass a SHA, but as I said, we would have to clone again. Not sure if one method is better than the other though.",discussion_participation
+Can make the extensions repo and openj9-omr repo mentions into links?,discussion_participation
+"Can you change the wording then to something like ""Archives the SDK and test material for later pipeline stages""?",discussion_participation
+links would be great for the repos here.,discussion_participation
+"Can we reorganize this a little so the two OMR related builds are together and the website one comes after?
+
+Also, can this describe the tag laid down on merges?",discussion_participation
+"Is there a reason to have the #else section here?  Can't the ztpf code just exclude the main body and avoid duplicating the TRC and return?  Provided the gsParams is initialized before calling the function, this should be fine.",discussion_participation
+Same question as above.  Can we limit the ztpf-specific code paths by changing what's #ifdef'd out,discussion_participation
+Update made.,discussion_participation
+Update made.,discussion_participation
+Since this function is called from two analyses would it be better somewhere in the OSR infrastructure?,discussion_participation
+The string length shouldn't be hard coded. sizeof() can determine the string size at compile time.,discussion_participation
+"The terminating zero needs to be included in the comparison, otherwise the check could match a subset of a longer name.",discussion_participation
+Could the J9_SHARED_DLL_NAME ever fail to be found? I'm wondering the message should also be printed when (NULL == entry).,discussion_participation
+"I think it is unlikely we will have another module that does not depend on j9shr29 dll but its name begins with ""openj9.sharedclasses"". But I am fine changing it to use strcmp() too.",discussion_participation
+"Right, it is better to also print this message when entry is null. ",discussion_trigger
+"strncmp() is fine, just the length should include the null terminator.",discussion_participation
+Space before {,change_request
+Is there a specific reason you need the ? here (for the JIT)?  This would read better as simply != 0.,discussion_participation
+See above.,discussion_participation
+Fixed.,acknowledgement
+Fixed.,acknowledgement
+Fixed.,acknowledgement
+I don't follow the idiv here... could you explain a bit more?,discussion_participation
+Class.isArray returns boolean so the result can only be 0 or 1.,discussion_trigger
+should this be a right shift or something if we are trying to get rid of trailing zeros or something then? idiv is an expensive thing that the optimizer needs to see through so we should avoid generating it,discussion_participation
+"Since the divisor is a constant and power of two, it will be turned into a shift instruction in codegen.",discussion_participation
+Since you're creating the expression yourself I suggest you create the optimal one now rather than relying on the code generator to do any sort of optimization on it. We have multiple code generators and creating trees that then need to be optimized in all of them is not such a good idea.,discussion_participation
+"Make sense, will make the change",discussion_participation
+idiv has been replaced with iushr.,discussion_participation
+"I'll just merge it the way it is. This condition is explicitly called out in the java.lang.instrument.Instrumentation.isModifiableModule?() javadoc, so the condition needs to be in the code if there is ever a case that returns false. Keeping the condition avoids having to slow down the code later.",discussion_participation
+"This needs to use `patsubst` instead to avoid altering paths like `foo/Interface` to `foo-Interface`.
+```
+UMA_M4_INCLUDES := $(patsubst /I%,-I%,$(UMA_C_INCLUDES))
+```
+Also, spacing around `:=` improves readability.",discussion_participation
+18_3 would be better,discussion_participation
+separated should be separate,discussion_participation
+separated should be separate,discussion_participation
+What is this for? It appears unused.,change_request
+"Should this be more specific? There were several _shapes_ for Java 9, we should assume there will be several for 18.3 as well.",discussion_participation
+Our coding guidelines generally frown upon modifying a formal parameter.,discussion_participation
+We should be careful adding instance fields to string due to the footprint increase they cause,discussion_participation
+Please be consistent with formatting casts (space between type and `*`).,change_request
+Formatting nit: space after 'if'.,discussion_participation
+This field is required for Java 18.3 due to references by j.i.UnixFileSystem.canonicalize0.,discussion_participation
+"@pshipton indicated in https://github.com/eclipse/openj9/issues/152 ""We expect to only support the latest so a build number should not be needed, and will quickly become out of date."".",discussion_participation
+This is required for `Java 18.3` due to `j.i.ModuleBootstrap.boot()` in this Java version throws Exception.,discussion_participation
+"The replacement set of natives don't match those required by Java 8.
+Each of these should omit the `0` suffix for Java 8 (so they can't be classified as 'common'):
+```
+allocateMemory0
+copyMemory0
+defineAnonymousClass0
+defineClass0
+ensureClassInitialized0
+freeMemory0
+getLoadAverage0
+objectFieldOffset0
+reallocateMemory0
+setMemory0
+staticFieldBase0
+staticFieldOffset0
+```
+These don't appear to exist in Java 8 (I would have expected the call to `RegisterNatives` to complain): they should be removed for Java 8:
+```
+getUncompressedObject
+isBigEndian0
+unalignedAccess0
+```",discussion_participation
+"Pls note the comments for the method `registerJdkInternalMiscUnsafeNativesCommon` as following:
+/* register jdk.internal.misc.Unsafe natives common to Java 9, 18.3 and beyond */
+`Java 8` doesn't have class j.i.m.Unsafe.",discussion_participation
+Java 8 _does_ have sun.misc.Unsafe and it was my understanding that this was how those native were registered (and would be broken by this change). Am I missing something?,discussion_participation
+"`Java 8` `s.m.Unsafe` natives are exported explicitly (see `sun_misc_Unsafe_exports.xml`).
+Again, `Java 8` doesn't have class j.i.m.Unsafe, whatever change within `Java_jdk_internal_misc_Unsafe_registerNatives` won't affect `Java 8` behaviours.",discussion_participation
+As Andrew pointed out this will (negatively) affect footprint: Perhaps we ought to fix UnixFileSystem.canonicalize0?,discussion_participation
+"`j.i.UnixFileSystem.canonicalize0` is part of `OpenJDK`. The general idea is to avoid JCL patch as much as possible. 
+`Java 18.3` code is still progressing so it might be changed in future builds. In case it stays in final release, the footprint impact on `Java 18.3` due to this additional instance field could be addressed later.",discussion_participation
+"I see a reference in java.base/share/native/libjava/jni_util.c, not UnixFileSystem. Adding that byte might _*double*_ the footprint of a String. I don't think we can afford that.",discussion_participation
+That makes sense. Thanks.,acknowledgement
+Do we still need to call ModuleBootstrap.boot() for Java 18.3? Something is wrong if it needs to be called but then throws an exception.,discussion_trigger
+"Not sure about *double* part, there are a few other instance fields within `j.l.String` such as 
+`private final byte[] value;`
+`private final int count;`
+`private int hashCode;`
+
+`Java 18.3` `b23` -version throws following exception without the `coder` field
+````
+Exception in thread ""main"" java/lang/NoSuchFieldError: java/lang/String.coder
+        at java/io/UnixFileSystem.canonicalize0 (java.base@9/NativeMethod:4294967295)
+        at java/io/UnixFileSystem.canonicalize (java.base@9/UnixFileSystem.java:170)
+        at java/io/File.getCanonicalPath (java.base@9/File.java:618)
+        at java/io/File.getCanonicalFile (java.base@9/File.java:643)
+        at jdk/internal/loader/URLClassPath.toFileURL (java.base@9/URLClassPath.java:253)
+        at jdk/internal/loader/URLClassPath.<init> (java.base@9/URLClassPath.java:188)
+        at jdk/internal/loader/ClassLoaders.<clinit> (java.base@9/ClassLoaders.java:85)
+        at java/lang/ClassLoader.initializeClassLoaders (java.base@9/ClassLoader.java:183)
+        at java/lang/Thread.initialize (java.base@9/Thread.java:422)
+        at java/lang/Thread.<init> (java.base@9/Thread.java:153)
+````",discussion_participation
+"This exception catching code is required because `jdk.internal.module.ModuleBootstrap.boot()` is declared with `throws Exception`, which is mainly due to ` systemModuleFinder.find(JAVA_BASE)` might throw an `IOException`. ",discussion_participation
+"OpenJDK `Java 18.3` only has following three instance fields:
+  `private final byte[] value;`
+  `private final byte coder;`
+  `private int hash;`
+There is no `count`.
+fyi @fjeremic 
+",discussion_participation
+We bundle to `coder` and the `count` into a single field thus getting the benefit of having a `count` which speeds up substring operations and StringBuilder interaction while also supporting string compression.,discussion_participation
+"Adding the coder increases footprint of all strings in compressedrefs by 33% (currently 3 fields so `J9Class*` plus 3 32-bit fields is 16 bytes. Adding another field bumps this to 20, but because of alignment it increases to 24. 1 - 16/24 = 33%. This is definitely something we don't want.",discussion_participation
+"I think it's worse: my understanding is that the unit of allocation is now 16 bytes (so everything is 16-byte aligned). String is 16 bytes in Java 8 & 9, the extra byte requires another 16 bytes for a total of 32 bytes.",discussion_participation
+"I feel OpenJ9 should have a field `coder` to match OpenJDK for two reasons:
+1. OpenJ9 with same `j.l.String` fields as OpenJDK can avoid JCL patches required to fix `NoSuchFieldError` as per earlier comment in this thread. Avoiding JCL patch is as important as performance advantages. Past experience shows JCL patch price tag is high in all perspectives;
+2. User applications attempting reflection access of `j.l.String` field `coder` will succeed in OpenJDK but fail at OpenJ9 which usually causes confusion and defect against J9.
+
+Can field `coder` serve the purpose of OpenJ9 only field `count`? I suggest to open another issue for further discussion to rename the field `count` to `coder`. This pull request (adding field `coder`) won't affect `Java 8 & 9`, and allow adoption of `Java 18.3` further updates.",discussion_participation
+"> I think it's worse: my understanding is that the unit of allocation is now 16 bytes (so everything is 16-byte aligned). String is 16 bytes in Java 8 & 9, the extra byte requires another 16 bytes for a total of 32 bytes.
+
+You're right! We support compressedrefs shift of 4 so 2^4 = 16 byte alignment. This change will double the size of all string objects.",discussion_participation
+"The coder field does not serve the same purpose as count. There is an important difference in the String implementation behavior here for OpenJ9. In OpenJ9 the backing array of a string can be longer than the string length. This is a very useful optimization for a number of cases including when a StringBuilder/StringBuffer has append called after a toString; a substring is used to generate prefix strings; and to prevent having to truncate the backing array of a StringBuilder/StringBuffer when toString is called if the builder's of buffer's backing array is over allocated. Without the count field these optimizations cannot be done. Removing or repurposing the count field does have a major performance implication as a result.
+
+Adding a new field does need a good justification given the huge object size increases that can be seen (per the discussion above). I agree there is a case for minimizing patches, but given how performance sensitive String is a little bit more study might be justified before adopting the field.",discussion_participation
+"The only problem with renaming the field from count to coder is that count is an int and coder field is a byte. The byte may only hold 0 or 1 or something like that, but for count the MSB is the bit so I don't know that we can make the reflective access equivalent...",discussion_participation
+Related to https://github.com/eclipse/openj9/issues/223.,discussion_participation
+"We would go ahead and deliver this change to temporarily add the coder field. As @JasonFengJ9 said, the addition of the coder field only affects Java 18.3, for which there isn't yet any OpenJ9 build provided. The extensions repo for Java 18.3 hasn't been created yet, so we don't have a simple way to patch the JCL code at this time. It can be done later after the extensions repo is created, #223 is opened to track this. Delivering this change enables raw builds of Java 18.3, which is desirable in order to provide initial support for Java 18.3 and make it easier to stay up to date and keep it working.",discussion_participation
+Note that the coder field will likely not have the correct value once OpenJ9 enables string compression by default leading the presence of this field to cause incorrect behavior.,discussion_participation
+"Does coder() return correct coder value, or the coder value might be changed after string construction once OpenJ9 enables string compression by default?",discussion_participation
+The timing of this initialization is problematic: it occurs before the body of any constructor and so it will observe `count == 0` yielding the wrong answer for uncompressed strings.,discussion_participation
+There is a mix of spaces and tabs here that won't leave everyone pleased. IMO tabs should never appear after a non-tab.,change_request
+"In particular, we try to avoid this kind of alignment as keeping the spacing consistent when new entries are added results in unnecessary changes.",discussion_participation
+Removing the space changes to other entries to avoid unnecessary modification.,discussion_participation
+Moving `coder` initialization to inside of `j.l.String` constructors. ,discussion_participation
+This field should be final. That would highlight the missing initialization in several constructors.,discussion_participation
+sigh... fixed.,acknowledgement
+"That's better. Thanks, Jason.",acknowledgement
+"If you use single quotes around the pattern, I expect fewer escapes would be required.",discussion_participation
+"updated commit, seems to still work properly",discussion_participation
+"That's not how you spell 'copyrights'. ;-)
+I don't think that word should be capitalized.",discussion_participation
+"I suspect you didn't have `\` escapes before, but it seems right now.",discussion_participation
+fixed,acknowledgement
+"The commit says this has been fixed, but this line is still present. I think you may have forgot to remove it. See #218 for details.",discussion_participation
+Fixed.,acknowledgement
+"The U in ""Memory Usage"" shouldn't be capitalized.",discussion_participation
+The usage threshold attribute ...,discussion_participation
+The collection usage threshold ...,discussion_participation
+"Looking at the html output, there should be a ```<br>``` or two here.",discussion_participation
+This should say OpenJ9 instead of IBM-specific.,discussion_participation
+"Instead of ""might not be"" use ""is not"".",discussion_trigger
+Should this assert?,discussion_trigger
+should this assert?,discussion_trigger
+could you put a comment on what is happening here?,discussion_trigger
+can you write this as ~1 rather than -2 so that it is a bit more clear.,discussion_participation
+"I just want this message to be more clear. Instead of ""Please delete the existing one and download it again!"", I think we should say something like - Please delete $filename and rerun the program!",discussion_participation
+this is valid or invalid? :),discussion_trigger
+"message updated.
+",discussion_participation
+We should stop specifying `-openj9-branch` since we really only care about `-openj9-sha`,discussion_participation
+"I suppose it doesn't really matter. `$TRAVIS_BRANCH=master` and the default is `master` so it doesn't really change anything. If at some point the get_source script changes its default, we would probably want `TRAVIS_BRANCH` instead, although it doesn't really matter because he checkout the SHA anyways.",discussion_participation
+containsKey() would also work,discussion_participation
+"To avoid unexpected problems, and just as good practice, please create a new Exports rather than modifying the parameter.",discussion_participation
+"@pshipton Fixed as suggested, thx!",acknowledgement
+"This shouldn't be needed, since the Exports in the Map was already modified on the previous line.",discussion_trigger
+"Right, corrected, thx!",discussion_participation
+"I think we have to keep the default to be ""default_exclude.txt"".",discussion_participation
+change default back to default_exclude.txt,discussion_participation
+Remove the System.out.println call.,discussion_participation
+This is a good candidate for `Objects.notNull()`,discussion_participation
+These printing messages were used for test and already removed.,discussion_participation
+Please add one more indentation before \<testCaseName\> \<variations\> and \</variations\>.,change_request
+This `RuntimePermission` can be defined within `com\ibm\oti\util\RuntimePermissions.java` as a static constant.,discussion_participation
+"Pls use `2017, 2017` instead.",change_request
+Same as comments above.,same_as
+Same as comments above.,same_as
+Same as comments above.,same_as
+Same as comments above.,same_as
+Same as comments above.,same_as
+Same as comments above.,same_as
+Same as comments above.,same_as
+_must not be null_ sounds better.,discussion_participation
+`accessClassModule.isNamed()` is redundant. `Module.canRead()` handles unnamed module case internally.,discussion_participation
+Fixed.,acknowledgement
+Agreed and fixed as suggested.,acknowledgement
+Updated.,acknowledgement
+Updated.,acknowledgement
+Updated.,acknowledgement
+Updated.,acknowledgement
+Updated.,acknowledgement
+Updated.,acknowledgement
+Updated.,acknowledgement
+Updated.,acknowledgement
+Updated.,acknowledgement
+Agreed and fixed.,acknowledgement
+"There is another occurrence of `new ReflectPermission(""suppressAccessChecks"")` at method `reflectAs`, pls change it to `ReflectPermissions.permissionSuppressAccessChecks` as well.",discussion_participation
+Updated.,discussion_participation
+"Minor nit.  Let's change byte-length to byteLength or byte_length, since you end up using this in an equation to subtract 1 at the end.",discussion_participation
+I think SRAK is only available on z196 and newer.  Can you double check if we can unconditionally use this?,discussion_participation
+Will do.,discussion_participation
+Nice catch. Fixed SRAK.,acknowledgement
+"I think VENDOR_VERSION should only be defined when its not an OPENJ9_BUILD.
+-DVENDOR_VERSION should be sufficient.",discussion_participation
+This is a new file: the first year should be 2017.,discussion_participation
+"couple of typos in fiullversio, extra i and missing n.",discussion_participation
+"sigh, thats where those keystrokes went. :)  Fixed.",acknowledgement
+Why does this probe both the old and new locations for the property?,discussion_participation
+"The intent of this is to set the local connector address in the system properties, per the reference implementation, and return the address.  
+
+If the property is unset in the system properties, then the agent has not been started before.  This is not an error condition.  However, if the agent has been started  the property should have been set.",discussion_participation
+Should addr be checked for null first?,discussion_trigger
+Pls add spaces around +,change_request
+Pls add spaces around +,change_request
+Pls add spaces around +,change_request
+"This comment implies that calling setProperty with a null value will work, however it throws NPE.",discussion_trigger
+Fixed.,acknowledgement
+True.  Fixed.,acknowledgement
+"I think you mean ""an exception"", not ""and exception"".",discussion_participation
+"Sorry, forgot to push my changes.",change_request
+"hmm, the bigEndian case needs more thought - wasn't was wrong the big endian case?",discussion_participation
+"It seems the problem was that both endian cases were incorrect, but since the little endian use case had been running in testing for 8 months without signs of problems we assumed that the problem was big-endian specific and disabled that code path. This change effectively swaps the little endian handling to what would have been (part of) the big endian code path.",discussion_participation
+Can you swap the arguments so the constant is on the left?,discussion_participation
+"Actually, I think that sort of 'cleanup' should be done in a separate PR.
+You will need to sign the Eclipse Contributor Agreement (ECA).",discussion_participation
+I have a ECA signed yesterday so hopefully all in the system by now,discussion_participation
+It is weird.  You did not fail the IP-Validation.  It says that the service is down.   It does appear that your commit message is missing the signed-off by tag though.  Your PR comment has it but not the commit as far as I can see.,discussion_participation
+"The format of that line (in your commits) should be:
+```
+Signed-off-by: Steve Wallin <steve_wallin@uk.ibm.com>
+```",discussion_participation
+"Comments should generally go above the code being described, rather than below.",discussion_participation
+Rename?,discussion_participation
+"Above it says J9ClassRef and here it says J9Class, although it returns an InternalRamClass",discussion_participation
+j9ClassRef doesn't match the argument internalRamClass,discussion_participation
+"I didn't notice earlier. This comment has the same problem fixed in VMAccess.java, referring to J9ClassRef and J9Class.",discussion_participation
+Don't call `getJITHelpers` again.  It's already been fetched into the `jitHelper` local.  Same on the other branch of the if.,discussion_participation
+Java `asserts` almost never run as they are only enabled when running with `-ea` or similar command line variation.  Use `Objects. requireNonNull(classObject)` to enforce the check always.,discussion_participation
+`VM.getVMLangAccess()` is already cached in the `access` local.,discussion_participation
+"Although adding classes to the vmconstantpool is the easy way to get them loaded / available, it is a startup cost. 
+
+Given that the sun_reflect_constantpool code already uses the JNI id cache, wouldn't this be a good candidate for that mechanism rather than the vmconstantpool?",discussion_participation
+`CLASSREF` has classfile constant pool connotations.  This should mention either the ConstantPoolOOP or InternalRamClassRef in the name of the macro so it's clearer what's happening here.,discussion_participation
+"There's an lot of atomic operations happening here - 
+* this method drops VMAccess, 
+* then toReflectMethod will acquire and drop it again, 
+* then this method acquires it so it can be dropped again at the bottom of the method.
+
+ Things that we can ignore: 
+* deleting the localref isn't necessary - it will be cleaned up when the method returns.
+* extra acquire / releases in the setNativeOOM case are fine.  In fact, use `throwNativeOOMError()` as it handles the acquire / release for you.",discussion_participation
+Can this be cached above to avoid the vmaccess concerns?,discussion_participation
+"Do you mean load j.l.InternalRamClass with `(*env)->FindClass(...)` and then store it in the `JniIDCache` ?
+
+If we took this approach we would have to also cache the `vmref` `jfieldID` as well and use `(*env)->GetLongField(...)` in every place we are using `J9CLASS_FROMJ9CLASSREF`. This would mean adding more acquire / releases vmaccess points.
+
+What I really need is the vmconstantpool fieldref for `vmref`. It is my understanding that if you create a fieldref you also need the owning classref in the vmconstanpool. I don't need to explicitly load the class or even require `J9Class*` for j.l.InternalRamClass.",discussion_participation
+"Correct - anything in the VM CP with a fieldref is resolved on startup, and can always be used.  You still need VM access to do so.
+
+Also note, that JNI functions like FindClass are VM access acquire/release points already, so doing it explicitly is not actually more calls.",discussion_participation
+The method that this replaces was poorly named: I suggest 'computeOffset' would be better. Also the second argument would be better named 'baseOffset' to reflect the origin of that value.,discussion_participation
+Thanks! Will fix it.,acknowledgement
+A better name for this class of fields would be 'BASE_OFFSET'.,discussion_trigger
+Perhaps it would improve clarity and avoid the possibility of permuting the arguments to 'computeIndex' by introducing a single-argument version that mixes in OFFSET and SCALE.,discussion_participation
+"I was hoping to achieve this, but it would mean copying the `computeOffset` method body into every type-specific subclass.",discussion_participation
+Fixed,acknowledgement
+Fixed,acknowledgement
+Fixed,acknowledgement
+"We support some platforms that aren't using c99 compilers yet so locals need to be defined at the top of a scope.
+
+Also, all locals should be given an initial value to protect against future refactoring that may read them before they're defined.",discussion_participation
+I see. It has been updated.,discussion_participation
+Slightly related but it appears J9IA32CompressString.asm can be deprecated too. This is outside the scope of this PR though.,discussion_participation
+"Thank-you for pointing it out, I'll look into clean it up later.",discussion_participation
+Does this need an assert?  Or is not throwing an exception sufficient?,discussion_trigger
+"This is a normal test case that should pass in any case; otherwise, any exception will be captured if something wrong. 
+
+In addition, we've got test_findConstructor_ArityLimit_TooHigh() to capture the exception in the corner case.",discussion_participation
+"*/ should be on it's own line, with stars lined up",discussion_trigger
+"Can you add a comment here to explain why the commented out code is here?  I know there's a valid reason in this case (make it easy to find this location if the 8 vs 9 checks are changed to a compile time decision) and without a comment to remind reviewers, it looks like dead code and might be removed in the future.",discussion_participation
+Where is this used?  The staticverify.c change was reverted before we opened the code.  Did it get lost?,discussion_participation
+Yes. I've added it back in. I will rebuild this change.,discussion_participation
+Does this only apply to Java 9?  It'll likely need a `if (J2SE_VERSION(vm) >= J2SE_19) ` check,discussion_participation
+@DanHeidinga I figured out the version issue I was having was because the vm version is replaced by the class file version prior to checking the <clinit> structure. What do you think of this fix with passing in a new variable with the vm version?,discussion_participation
+`vmVersionShifted & BCT_MajorClassFileVersionMask` can this be pulled into a local?  The check will more readable that way.,discussion_participation
+Why does this take a portlb and set up for using it?  I don't see a use in the function.,discussion_trigger
+"Or, rather than passing the shifted version around, can the version be determined at the calcite and just pass the vmSupportedVersion around?",discussion_participation
+Not sure what happened here but it shouldn't be a new file.,discussion_participation
+That was just for debugging.,acknowledgement
+The mask is redundant from the declaration of vmVersion in cfreader.c. I'll remove it.,discussion_participation
+"Please add a space after the comma.
+I think we should expect `vendor_version.h` to also define `VENDOR_SHORT_NAME` (or something similar) which should be used here rather than the first three characters of `VENDOR_NAME`.",discussion_participation
+"This should be
+```
+#if defined(VENDOR_NAME) && defined(VENDOR_SHA)
+```",discussion_participation
+"This should be
+```
+#if defined(VENDOR_NAME) && defined(VENDOR_SHA)
+```",discussion_participation
+"Now that the name and SHA are separate, the whole name should be written; also these three calls to `writeCharacters` can be collapsed.",discussion_participation
+There should be a comment at the end of this line identifying the condition in the `#if` line.,discussion_trigger
+Please `&&` instead of `and` (for consistency at least).,discussion_participation
+This blank line was helpful in separating the copyright notice from what follows.,change_request
+and also the javacore file,discussion_participation
+spelling `nut` ,acknowledgement
+"nitpick ""range*/"" should be space for '*/'",discussion_participation
+"A test with a target methodHandle that accepts no parameters (ie ()Ljava/lang/String;) might be usefull as well. 
+
+Similarly a non-NULL empty parameter list would also be usefull",discussion_participation
+"if location is zero indexed then wouldn't ""valueTypes.size() <= location"" also be out of range?",discussion_participation
+"If this is a new introduced file, the year should begin from 2017",discussion_participation
+I discussed with Jack and the second check ensures that location never overflows,discussion_participation
+The string should be externalized. Look for MSG in this class to find examples.,discussion_trigger
+"fixed, moved exceptions to ExternalMesages-MasterIndex
+added entries K0670 - K0674",discussion_participation
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+This isn't required.  An uncaught exception will cause the test to fail.,discussion_trigger
+"Can you write this as
+```
+if ((skippedArgumentCount < 0) || 
+```
+It tends to be easier to read as the bounds then.",discussion_participation
+"Please cache `valueTypes.size()` in a local.  Because the parameter is a List, we don't know how expensive that operation might be and the result is used repeatedly in this method",discussion_participation
+`0 > value` is a strange idiom for checking if the value is negative.  Write the code so it's easy to read and matches most readers expectations.,discussion_participation
+This should be proceeded by a comment that includes the K0670 and the message using preprocessor tags.  Search for other uses of the com.ibm.oti.util.Msg class to see how the comment should look,change_request
+This should be proceeded by a comment that includes the K0670 and the message using preprocessor tags.  Search for other uses of the com.ibm.oti.util.Msg class to see how the comment should look,change_request
+This should be proceeded by a comment that includes the K0670 and the message using preprocessor tags.  Search for other uses of the com.ibm.oti.util.Msg class to see how the comment should look,change_request
+This should be proceeded by a comment that includes the K0670 and the message using preprocessor tags.  Search for other uses of the com.ibm.oti.util.Msg class to see how the comment should look,change_request
+cache the result of `valueTypes.get(i)` in a local in the for loop so it only needs to be executed once.,discussion_trigger
+"Formatting nitpick: please write this as
+``` 
+} else if {
+```
+Here and other places need to be modified.",change_request
+Can we Doxygen document these functions?,discussion_participation
+There seems to be changes in the _public_ API here. Can we document these APIs?,discussion_participation
+Can we move this definition closer to where it is actually used?,discussion_participation
+"We don't have to do this now, but we would get some pretty subtle bugs if the preserved register list was ever modified without updating this constant. We should consider in the future generating this map using the list of preserved registers directly from the linkage rather than encoding it by hand.",discussion_participation
+We should document `returnReg`.,discussion_participation
+Is `paramInRegisters` even being used anywhere in the codebase? I don't see any occurrences. Is it possible to simplify this API by removing the parameter?,discussion_participation
+You seem to be using a mix of tabs and spaces in this commit. Please use spaces only as the rest of the codebase does.,discussion_participation
+Formatting alignment issues here.,change_request
+Makes sense. I have added a comment at this point. Basically what we should have is one function that goes over list of preserved register and prepares register map for GC. I have added this in `TODO` right now. ,discussion_participation
+I added Doxygen styled documentation with explanation for each overloaded function. ,discussion_participation
+"Currently `paramInRegister` is used only by `VMNewEvaluator`. In cases where we have child `iconst` or `iload` (Basically 32-bit values to be passed as argument), evaluating that child only changes the lower half of the register keeping upper half intact. This was hitting an issue where C helper function was trying to use whole argument register.",discussion_participation
+Is it possible to remove the use and deprecate this parameter?,discussion_participation
+Still a mix of tabs and spaces here. Please enable whitespace hints on your editor and fix all of them up. You may want to consider setting `core.safecrlf false` and `core.autocrlf input` in your .gitconfig for this project.,discussion_participation
+In VMNew evaluator with current implementation of `iconstEval*` on it is not possible it uses `LHI` instruction to load so we end up having only lower 32 bits of the register filled with value. `new` helper uses whole 64 bits in argument. This causes allocation of wrong type of object or very large size array which causes `AIOOB`. ,discussion_participation
+"Ok, I understand. Still seems odd that we have a very general API for a very specific case. IMO we would benefit from having consistency everywhere and sending hand crafted call nodes to the linkage, same as Power codegen does. In this would you can have an `i2l` tree for the scenario you describe in VMNewEvaluator and everything just works and is consistent.
+
+This is outside the scope of this PR though, but a nice to have in the future.",discussion_participation
+GPR14 is a preserved register according to XPLINK register linkage.  Should that be included here?   ,discussion_participation
+"@joransiu Good catch. Just checked linkage, We do need to preserve it on zOS. Added it. Let me do basic test with it. ",discussion_participation
+Finished local unit tests. Should be good to go. ,discussion_participation
+"Nitpick: This condition is reasonably short - it could get away with being a single line 
+```
+if ((CFR_METHOD_NAME_CLINIT == isInit) && (0 != argCount)) {
+```",discussion_participation
+"Given how long this has waited for me to finish the review (sorry) I'm going to merge it as is.  If you want to address this nitpick, feel free to open a new PR (or not).",discussion_participation
+"or more precisely, I'll kick off the PR build and merge once the build succeeds.",discussion_participation
+"This is to maintain b148 composing which still overlays new changes at top of a base SDK. If not deleted, SDK will have two modules with same package/classes, and `jlink` won't work.",discussion_participation
+"Is this script required? package `com.ibm.dataaccess` export is removed within module `java.base` in same xml file, and there is no change to the actual package/class files.",discussion_participation
+"Pls keep previous changes, i.e., just move the file and not modify it which has better chance to let EGit connect file history. Copyright year changing can be in another pull request.",discussion_participation
+The copyright check fails without updating the copyright. Is that alright?,discussion_participation
+I think it is ok to merge with copyright check failure in this case unless @DanHeidinga says otherwise.,discussion_participation
+This file on the other hand is missing a copyright.  Can you add the copyright header to it?,discussion_participation
+This script doesn't seem to be needed. Will remove.,discussion_participation
+Added.,discussion_participation
+There is no need to modify this file.,discussion_participation
+Why was private removed?,discussion_participation
+Removing the `private` modifier avoids the need for a bridge method.,discussion_participation
+"I know this pull request is WIP, but note this needs to be fixed.",discussion_participation
+"`CCLINK` is defined a number of places, but I couldn't find any uses; perhaps this should define `CCLINKEXE`?",discussion_participation
+"That could be.  I copied this from the omr/example/glue.  I am still working on getting a successful build alongside openj9 and the extensions.  My current area of area is the linking...so may change again.  I will investigate down this path too, thanks for the pointer.",discussion_participation
+This file needs review for removal of 390/ppc/arm use cases.,discussion_participation
+Can you please organize imports (alphabetically)?,change_request
+"Done, in the next push.",discussion_participation
+If you subclassed the Unix implementation this file could be smaller as you would only have to override `getSharedLibSuffix()` but it may also change some of the functionality...,discussion_participation
+"That occurred to me as well, but the class is so small I don't think it's really worth it.",discussion_participation
+"`[JavaOne 2017: Open sourcing the IBM J9 Java Virtual Machine[`
+The final `[` should be a `]`",discussion_participation
+d'oh!,acknowledgement
+I suggest this would read better if the `if` were inverted; then both the condition is closer to the beginning of both branches. (Same comment for both changes).,discussion_participation
+The formatting is inconsistent (extra spacing).,discussion_participation
+"`getPackageName` will have called `isPrimitive` and may have already called `isArray`: perhaps it would be better to reorder the calls here so `getPackageName` is called after we've ruled out primitive and array types?
+
+Could you also correct the javadoc for `getPackageName`?",discussion_trigger
+Good plan.  Done.,discussion_participation
+Fixed!,acknowledgement
+"Fixed in the PR, I didn't use the automatic github commit.",discussion_participation
+Fixed,acknowledgement
+Fixed,acknowledgement
+"I added tests so now we're doing all three `singleAlignment`, `objectAlignment`, and `longAlignment`.  The tests are now using `checkFieldAccessMHOfAssortedType` on each array element.",discussion_participation
+I just switched back the number for now.,discussion_participation
+@tajila I think it makes sense to enable the GC as a separate variation.  It may help track down if the issue is GC specific. What do you think?,discussion_participation
+Fixed,acknowledgement
+Created an issue for this: https://github.com/eclipse/omr/issues/5018,discussion_participation
+This one line was added.,discussion_trigger
+Is the hack actually misspelled? (Two `R`s),discussion_participation
+![facepalm](https://media.giphy.com/media/3og0INyCmHlNylks9O/giphy.gif),discussion_participation
+"* 'high performance', or 'highly performant'
+* 'OpenJ9', not 'openj9' 
+* Talking in the abstract about the component is odd -- I'd instead simply talk about the 'compiler' ",discussion_participation
+"I tend to agree with Andrew, that detail should probably not live in this document; doubly so since a good chunk of this would end up reproducing the[ Testarossa Problem Determination Guide from OMR](https://github.com/eclipse/omr/blob/master/doc/compiler/ProblemDetermination.md)",discussion_participation
+I almost think it would be best to document `-Xtrace` first :) ,discussion_participation
+"To me, it looks a bit funny if you do it that way, but this could just be the way that my brain likes repetition close together. 
+",discussion_participation
+Issue is https://github.com/ibmruntimes/openj9-openjdk-jdk9/issues/34,discussion_participation
+"Right -- the link has to be `https://github.com/ibmruntimes/openj9-openjdk-jdk9/issues/34` 
+
+(Github collapses internal links into identifiers that are easier to read, but do not function within markdown documents)",discussion_participation
+Can this comment link to an issue tracking this problem? ,acknowledgement
+"Maybe replace ""basest"" with least-derived, or most generic? ",discussion_participation
+I alphabetized the includes in `InterpreterEmulator.hpp` and `J9Inliner.hpp` in c226bfd,discussion_participation
+"I tried adding some logging and it looks like we are getting there.
+
+For a call like `""abcde"".indexOf('a')`, the trees look like this:
+```
+n5n         icall  java/lang/String.indexOf(I)I[#361  final virtual Method -200] [flags 0x20500 0x0 ]  [0x7f0d05419490] bci=[-1,4,92] rc=2 vc=9 vn=- li=- udi=- nc=2
+n3n           aload  <string ""abcde"">[#358  Static] (obj1) [flags 0x80000307 0x0 ]            [0x7f0d054193f0] bci=[-1,0,92] rc=1 vc=8 vn=- li=- udi=- nc=0
+n4n           iconst 97                                                                       [0x7f0d05419440] bci=[-1,2,92] rc=1 vc=8 vn=- li=- udi=- nc=0
+```
+
+I think because the `'a'` becomes an `iconst`, the constraint is an integer type.
+
+I will change targetChar to 32-bit.",discussion_participation
+typo here? `loop class` must be changed to `lookup class`?,discussion_trigger
+"Can you explain why we need to ""construct"" JVM_VERSION using JAVA_IMPL and and JAVA_VERSION? I am just trying to understand :)) 
+
+The way I have it in this PR seems to be working perfectly. For example, in the job below, the JVM_VERSION provided while launching the Jenkins job is 'openjdk8-openj9', and it gets passed down into the actual third party application test build script as expected:  e.g.: https://ci.adoptopenjdk.net/view/work%20in%20progress/job/test_personal/223/console",discussion_participation
+"Thanks for the explanation. Makes sense to me now! I've made the change in the PR. 
+
+Validated the change with personal build: https://ci.adoptopenjdk.net/view/work%20in%20progress/job/test_personal/230/console",discussion_participation
+Done!,discussion_participation
+Is ClassesThatShouldNotBeLoaded normalized so there is only one entry per class? If it is then this is fine. If there are duplicates we may need to cache the lookup result since the name lookup can be expensive.,discussion_participation
+I don't follow the idiv here... could you explain a bit more?,discussion_participation
+Ok then this looks ok,acknowledgement
+should this be a right shift or something if we are trying to get rid of trailing zeros or something then? idiv is an expensive thing that the optimizer needs to see through so we should avoid generating it,discussion_participation
+Since this function is called from two analyses would it be better somewhere in the OSR infrastructure?,discussion_participation
+We should be careful adding instance fields to string due to the footprint increase they cause,discussion_participation
+"The coder field does not serve the same purpose as count. There is an important difference in the String implementation behavior here for OpenJ9. In OpenJ9 the backing array of a string can be longer than the string length. This is a very useful optimization for a number of cases including when a StringBuilder/StringBuffer has append called after a toString; a substring is used to generate prefix strings; and to prevent having to truncate the backing array of a StringBuilder/StringBuffer when toString is called if the builder's of buffer's backing array is over allocated. Without the count field these optimizations cannot be done. Removing or repurposing the count field does have a major performance implication as a result.
+
+Adding a new field does need a good justification given the huge object size increases that can be seen (per the discussion above). I agree there is a case for minimizing patches, but given how performance sensitive String is a little bit more study might be justified before adopting the field.",discussion_participation
+"The only problem with renaming the field from count to coder is that count is an int and coder field is a byte. The byte may only hold 0 or 1 or something like that, but for count the MSB is the bit so I don't know that we can make the reflective access equivalent...",discussion_participation
+Note that the coder field will likely not have the correct value once OpenJ9 enables string compression by default leading the presence of this field to cause incorrect behavior.,discussion_participation
+coder() does so the initialization was right - I take back my comment it should be correct.,discussion_participation
+Should this assert?,discussion_trigger
+should this assert?,discussion_trigger
+could you put a comment on what is happening here?,discussion_trigger
+can you write this as ~1 rather than -2 so that it is a bit more clear.,discussion_participation
+"hmm, the bigEndian case needs more thought - wasn't was wrong the big endian case?",discussion_participation
+The Java 9 libraries were tripping debug builds because of operator new and delete in non JIT libraries from the JCL - removed from the commits.,discussion_participation
+The class is not static as a means of reducing the ability to access it - for the same reasons Unsafe is not static - the singleton accessor has a security check.,discussion_participation
+yes - getChar will be turned directly into a read - no bounds checking at all.,discussion_trigger
+"Opened #374 to track this one - not sure of the 'correct' fix, but put some ideas in the issue.",acknowledgement
+Most of the string implementation is using the << operator and it is prevalent in the StringCoding bytecode so I was sticking with that convention. You are right that the JIT would pick which ever is better for the platform in most cases.,discussion_participation
+"That is an interesting idea - it would save the extra allocates in subsequent getBytes() calls, but when you have shared strings ie multiple strings with the same backing array and different lengths, doing so could increase memory usage. I guess since we are having to allocate anyway one could argue the memory has already increased, the difference would be the increase would be permanent as opposed to transient. I'm not sure on the performance implications one way or the other. @DanHeidinga do you have any thoughts? Regardless this is an improvement since we will no longer copy on every call. Perhaps we can put this in and then try to figure out a study to see if there is benefit from storing it back by surveying some benchmarks or something?",discussion_participation
+"I created a separate switch because there may well be other cases where we want to change the offsets that are not related to arrayness. The basic pattern here is we have a switch to set a particular flag or set of values and I think I prefer the idea of doing the object and offset in their own so it is clear how things map. It may make an extra lookup table, but the cost should be low in terms of compile time and it makes the logic more clear in my opinion.",discussion_participation
+I have opened #375 to track this work.,acknowledgement
+the -1 will only happen when subsituteLength == 0 and so 4295 will never see the value. -1 is just a dummy value that is more obviously bad than 0 should the logic ever break,discussion_participation
+same reasoning as above to say the -1 is never used/seen,discussion_participation
+added,discussion_participation
+I think a comment near hear about the flags and what they change is warranted for reference purposes.,discussion_participation
+dates need fixing,discussion_trigger
+Please include that this is the case in Java 9 up - 8 and earlier will have the sun.misc.Unsafe as the native.,discussion_participation
+Please format this for doxygen,change_request
+This is obvious from the code.,discussion_participation
+formatting,discussion_participation
+redundant - the comment belongs with the specific list of enum entries that have the special handling. so please move this down there / incorporate into the other ocmments you added there,change_request
+This should either be properly doxygen'd or the comment moved into the method body and not put in the place where doxygen would go.,change_request
+I don't think these locals are necessary node->getSymbolReference()->getSymbol()->castToMethodSymbol() should be a fine chain if you need to test native-ness. Do we need to worry about a NULL return from castToMethodSymbol()? Move any locals necessary for null checking down near the use rather than declaring them up here.,discussion_trigger
+"True for C, but not so for the version of C++ used in the compiler. You could create a block with {}s to limit the scope if you wanted to.",discussion_participation
+This shouldn't be duplicated it should be pulled out of the ifdef,discussion_participation
+I don't believe signatures from the VM are guaranteed to have a '\0' so does this actually work in practice? I think it may read one character too many...,discussion_participation
+This should use return NULL rather than return 0 for future compatibility.,discussion_trigger
+As a new API this should have doxygen,discussion_participation
+doxygen for this as well,discussion_participation
+code style - prefer spaces around { }s,discussion_participation
+what other block frequency profiler? this seems a bit cryptic,discussion_participation
+"Special hardcoded fields/methods could be added to cold block marking, but this isn't done at present. Simply forcing the field to resolve in the constant pool is all that is needed. The dead local should be cleaned up by JIT compilation and so the load should cease to happen at that point. Having the field resolve rather than adding a special case to the JIT seems nicer to me, but happy to hear alternative arguments.",discussion_participation
+I believe the proper fix in this case is to abort the compilation and restart as a profiling compilation. The mid-compilation switch was always non-ideal and JProfiling just highlights why this is the case. I don't view this as a blocker. I believe @ncough had some conversations with @mpirvu to the effect that we all agree an abort and restart is warranted and that will avoid the whole mess. The comment can go once that is implemented.,discussion_participation
+That frequency should already be defined else where as a macro so we should use that global definition rather than duplicating the value of 6 either as a static const or a macro.,discussion_participation
+"The key here is the note about the round up - in Java sub-int sized values will be widened to int - this needs the specific width. This could potentially go somewhere else, but I am fine with it being here since it is an anomaly. I don't think we should be reaching up to OMR directly rather than going via the TR mapping - it is a dangerous precedent and leaves this code open to being broken by changes in OMR that could be completely unreleated. Java chose to replace the OMR definitions so this code needs to handle things its own way IMO. When we go to contribute this up to OMR then we can revisit the design.",discussion_participation
+"I will let @ncough comment, but I don't think this style is a problem on other platforms - it exposes maximum richness and the optimizer will have an opportunity to rearrange if necessary as will the code generators.",discussion_participation
+"Ideally, we would be able to put the profiling code into AOT code and relocate the counters so we don't even need that, but I agree one step at a time. Excessive aborts would be problematic, but given the low use of profiling compilations atm we should be fine. We should make sure that the vlog calls out such aborts very clearly so these events are easy to track and diagnose if a problem does occur.",discussion_participation
+One additional thought - should we construct an instance of this handle in the static init for the class? we could touch the field there then if we didn't want it in the constructor. Thoughts @DanHeidinga ?,discussion_participation
+"I'm not an expert on this, but the feature would seem to run functionally correctly with software checks, it is just the performance overhead that would prevent us from using it in the 'real-world'. If the checks could be made cheaper then the software version could work. Perhaps rather than calling the option emulateGuardedStorage something like softGuardedStorage or something like that since it is doing guarded storage from what I understand, just not with the hardware instruction and trap that makes it performant?",discussion_participation
+A static cast would be better here no?,discussion_participation
+A discussion comment in reply to this comment on why HWVPInfos can go - I assume it came from hardware profiling work and I'd just like to understand how we can clean this up without breaking anything.,discussion_participation
+no space before NULL,discussion_trigger
+no space before NULL,discussion_trigger
+in general it would be more neat to do internal && (....). That would have the benefit of testing the already computed bool first before potentially doing a deref which could be a savings if this runs a lot.,discussion_participation
+"If these are not being used as individual bits why do we need to assign numbers in a flags style? Can't we use the default numbering or standard decimal numbering so we don't think a bit or will do something useful which is the usual intent between a hex value assignment eg 0x1, 0x2, 0x4, 0x8 etc.",discussion_participation
+Same as last enum,same_as
+Doxygen on these methods and the reason for their split from OMR is necessary.,discussion_participation
+this seems ugly can we avoid the nested case here and make this a more clean if elif else?,discussion_participation
+There isn't an OMR helper for this that could be used?,discussion_participation
+might this look and read better as a setup of the whole thing for say Int64 and then a if Int32 overwrite them all and if something else assert? The repeated testing is a bit ugly and will be slower than necessary.,discussion_participation
+Can we have a comment on what this means here please?,change_request
+comments on these are warranted,change_request
+should we call this jProfileIntValue? That way if we contribute it up to OMR where profiling of sub int values may be warranted the additions don't require refactoring?,discussion_participation
+@dsouzai you might be interested in this part of the change - any comments?,discussion_participation
+perhaps replace from overhead to the end of the sentence with 'overhead caused by synchronization'?,discussion_participation
+perhaps name the query which must return true from the cg for the bitpermute to be used?,discussion_trigger
+strategy and will lower,discussion_participation
+a compilation abort and restart.,discussion_participation
+Why introduce `EsVersionString` here when the `2.9` are hard coded everywhere else in this file?,discussion_participation
+"I considered replacing this file with j9jit.rc.ftl to gain direct access to all UMA properties, but decided against that because we're trying to stop using UMA.
+
+I used a macro where I could find an existing definition. The expansion of `EsVersionString` is `""2.9""`; I couldn't find one that expanded to `""29""`. Would you prefer I leave those things hard-coded? (I don't have a strong preference either way.)",discussion_participation
+I would leave it hard coded so the values will be consistent within the file.  ,discussion_participation
+Use of `EsVersionString` removed.,discussion_participation
+This flag should be either an `uma_` or `build_` flag.,discussion_participation
+The format in the file is `prefix_camelCaseFlag`.  Can you call this `uma_windowsRebase` to match the existing convention?,discussion_trigger
+"Should there be a `@SuppressWarnings(""unused"")  /* Used by builder */` annotation on this method?",discussion_participation
+"This will generate two MTs for every call.  Have you considered using `parseIntoClasses(methodDescriptor, classLoader);` from the implementation of `fromMethodDescriptorString` to avoid creating a second MT by accessing the parsed classes list?",discussion_participation
+This creates an MT on every call.  Do you have experience with how this API will be used?  It just went from a fast array access to an expensive MT creation...,discussion_participation
+"It was used once in our VarHandle code, but it was unnecessary, so I will remove it. A `grep` shows that it's used a fair bit by the OpenJDK VarHandle implementation, which doesn't affect ours. The search didn't show any other uses in the JDK.",discussion_participation
+"No, I didn't consider it. I'll see if I can make that work.",discussion_participation
+"I'll add it, although I would claim that it's not used by builder.",change_request
+Fixed,acknowledgement
+Fixed,acknowledgement
+"Please create another file and store the removed tests above into it (i.e., excluded_playlist.xml). We are working on generate .so for these tests in OpenJ9. Eventually, these tests will need to re-included and having excluded_playlist.xml is easier for us to re-included these tests back. Thanks.",discussion_participation
+Good idea. I've added a test/VM_Test/excluded_playlist.xml file.,discussion_participation
+nitpick: initial value?  Can we directly assign the `j9nls_` call to this?,discussion_trigger
+Nitpick: Initial value?,discussion_participation
+We never write this back to the `vm->vTableScratch`?,discussion_participation
+"Yes, this was copied code.",discussion_participation
+Agreed - copied code again.,discussion_participation
+vTableScratch and vTableScratchSize are write-once on startup.,discussion_trigger
+Fixed all similar occurrences.,acknowledgement
+Fixed all similar occurrences.,acknowledgement
+spelling nit.  `double-wrod`->`double-word`,discussion_participation
+"Not sure why this comment is relevant.. As the assert text says, Lockword must be aligned to DW boundaries anyway.",discussion_participation
+"Unrelated to this change, but we just need to disable this optimization for reference fields loads when ConcurrentScavenge is enabled.   Other primitive type loads should be okay.",discussion_trigger
+"If we are loading an 32-bit int, do we still need to logical extend to zero out the upper 32-bits?",discussion_participation
+Fixed in 98f8017,acknowledgement
+Might as well fix now. Fixed to allow primitive field loads under concurrent scavenge in 98f8017,discussion_participation
+"Yes, because under compressedrefs shift of zero we need to load a full 64-bit uncompressed value. The `LPDG` will do a 32-bit load but we need to sign extend it. We behave similarly to what we would have generated for a normal load, which would have been a `LLGF`. In our case `LPDG` + `LLGFR`.",discussion_participation
+"Note we would not generate the `SLLG` below because it is guarded by `loadNode->getFirstChild()->getOpCodeValue() == TR::lshl`. This node does not exist for compressedrefs shift of zero.
+
+Though you may be right in that we are too strict right now. We should be able to avoid the `LLGFR` for non-Address datatypes. Thoughts?",discussion_participation
+"Yeah, I was thinking for primitive integer types the LLGFR is unnecessary.  However, I wonder how this interacts with our fancy load evaluator.  In some cases, we do extension as part of the load evaluation.",discussion_participation
+"I made the modification in 86c3047 to only generate the extension for address data types. This should address all the review comments. Let me know if there is anything else.
+
+As for the fancy load evaluator the patterns we match here explicitly only permit simple load immediates for primitive types. We do not handle (yet) at least any sign extensions etc. for primitives at least.",discussion_participation
+This should be && not ||. I'll have to revert this change.,change_request
+"`node` is not a treetop though. Would it be better if the trace message said ""found disallowed opcode %s at node %p""? Or even better print both the treetop and the node?",discussion_participation
+"That's a good point, I'll modify the message for clarity",discussion_participation
+i assume you'll fold this away in a subsequent commit? :),discussion_participation
+"Yes, I'm doing this very conservatively, but I could fix this one up right away because its clearly dead.",acknowledgement
+Fixed,acknowledgement
+"Arg, yep.",discussion_participation
+Fixed.,acknowledgement
+"for code clarity, should this `goto fail` rather than `goto done`?  ",discussion_participation
+Agreed - fixed.,acknowledgement
+Please add a comment that describes the purpose of these fast paths in the code.  The commit comment info is good and should be here in the source as well.,discussion_participation
+This variable should move into the scopes where it is used to make it easier to reason about it's life time.,discussion_participation
+Why is replacement set to `-1` if `substituteLength ==1`?  Won't that right an incorrect value into the `newChars` on line 4295?,discussion_trigger
+Same concern about `-1` here as well.,discussion_participation
+the -1 will only happen when subsituteLength == 0 and so 4295 will never see the value. -1 is just a dummy value that is more obviously bad than 0 should the logic ever break,discussion_participation
+same reasoning as above to say the -1 is never used/seen,discussion_participation
+added,discussion_participation
+"Thanks for clarifying.  Can you add a comment to that effect?  Might be clearer if broken up like:
+```
+byte replacement = -1;  // assign dummy value that will never be used
+if (substituteLength == 1) {
+   replacement = helpers.getByteFromArrayByIndex(substitute, 0);
+}
+```",discussion_participation
+Is this initial date correct?  The code here dates back to the 2000?,discussion_participation
+Are the dates accurate here?,discussion_participation
+Is 2000 the correct start date?,discussion_participation
+`START X SPECIFIC RULES` is this necessary in a ztpf file?,discussion_participation
+Is this section necessary in a ztpf file?,discussion_participation
+Same question about this section - can it be removed?,change_request
+start date?,discussion_participation
+"Thanks, since I've only just created the file, there's no need for two dates in the copyright statement.
+",discussion_trigger
+There should only be one copyright date.,discussion_participation
+There should only be one copyright date.,discussion_participation
+There should only be one copyright date.,discussion_participation
+Is this a typo? There seems to be an extra `<` in the path. Also why is this include needed exactly? There are no other code modifications that make use of the structures defined in this header.,discussion_participation
+Seems I cannot type; yes it is a typo. This include is needed to access a previously added field; copy/paste also is an issue for me.,discussion_participation
+"Minor comment nit.  `S390MachineTypes` you described in an static const integer array containing the recognized machine types.   Are you referencing the `TR_S390MachineType` enum instead (https://github.com/eclipse/omr/blob/master/compiler/env/ProcessorInfo.hpp#L28-L61).  Also, not sure about the hex representation part... they are just binary integers. :) ",discussion_participation
+"This rational seems backwards to me -- and setting a tune to a level older than arch is odd.  Why would tune invoke arch-optimized glibc functions instead?  Are those compatible to run on z10 (min arch)?   
+
+I would think you are leaving some performance on the table by not tuning to z196 or newer, as that level introduced the out of order pipeline.  However, I guess this gain may be offset by the less efficient memcpy, etc? ",discussion_participation
+"The value that z/TPF picks up - the model number - matches TR_S390MachineType but not the binary integer. For example, model 2827 (ec12) was loaded into a register and compared against the value in the memory location for S390MachineTypes which is xB0B.  I can take the comment out but I wanted anyone on the Pok. team to be aware of why the checks are removed from this version of J9CPU.cpp",discussion_participation
+"Hmm.. okay.   2827 == 0xB0B.... the representation in registers or memory should be identical in bits.  If you had left the checks in there, did you observe check failures?  ",discussion_participation
+"it is the opposite, Joran. The compiler will not create builtin_memcpy because the latest z/Architecture optimizations for memory moves were put into glibc (I think version 2.21) However, we are on a much older version, 2.3. We don't have those optimizations. There is a huge difference without a builtin_memcpy and without memory move optimizations for z/architecture in glibc.
+",discussion_participation
+OK.  Thanks for the extra insight.,acknowledgement
+Is this needed?,discussion_trigger
+Are you certain `pid->pi1pids.pi1mslr.pi1mod` will always contain a valid processor ID? What happens if this value is not contained within the list of enumerations in `TR_S390MachineType`? Then the value of `ret_machine` is technically undefined. Will this break things?,discussion_participation
+"While we get the data at ipl time from the store cpuid instruction (STIDP)  there is no reason to think that this area in main storage couldn't be corrupted at any time.  I will reset the code to do what z/os essentially does; get the character representation of the model, convert it to integer via atoi and then test the integrity of the result.",discussion_participation
+"Or simply iterate through the list of machines we support like the code did previously:
+
+```
+-   // Scan list of supported machines.
+-   for (int i = 0; i < sizeof(S390MachineTypes) / sizeof(int); ++i)
+-      {
+-      if (machine == S390MachineTypes[i])
+-         {
+-         ret_machine = (TR_S390MachineType)machine;
+-         }
+-      }
+```
+
+This ensures `ret_machine` always has a valid enum value.",discussion_participation
+Passing in the EMPTY_ANNOTATION_ARRAY may be less efficient than passing in an Annotation[] of the correct size. It means the code needs to call Array.newInstance() to create an array of the correct type and size.,discussion_trigger
+"The original code was:
+```
+h1.invoke(hm, (byte)97, true, 'c', 1, 2, (byte)98, ""d"")
+```
+
+Does a minimal change like this pass on an ebcdic system?
+```
+h1.invoke(hm, (byte)'a', true, 'c', 1, 2, (byte)'b', ""d"")
+```
+
+The code here mixes the ascii number for the character and the actual character value.  Always converting the char into a byte in the code should be correct for any charset, I think.",discussion_participation
+"the dynamic casting of `char` to `byte` won't work directly since EBCDIC system value for readable letters (A-Z, a-z, 0-9) are in the range of 128 - 255, which is out of range for a `byte` (which is signed) to store and results in a negative value after casting (undefined characters when casted back to `String`).",discussion_participation
+"I'm hesitating on this PR as it changes the meaning of the test case.  The point of this test case is to validate the `dropArgumentsToMatch` using `byte`, not `byte[]`.
+
+Can you modify the test case in a way to preserves using a `byte` as the signature types?  Feel free to drop the use of converting this to a String.  
+
+",discussion_participation
+"The `byte` testing is preserved through the second part of the `byte[]` (`input[input.length-1]`) passed to the hash method, the goal of this test is to confirm the alignment when relocating different size parameters.
+
+The reason for getting `byte[]` from `String` is to maintain the readability of the test result, as EBCDIC will translate `""ab""` to negative `byte` value while dynamic casting `(byte)'a'` produces the ASCII code of 'a'
+
+the assert can still be done similar to
+`hash_byte( (byte)'a', (byte)'b' ) == String(new byte[] { (byte)'a', (byte)'b' })`
+which is less readable as the actual string build from the byte array is ""/<?>"" since 0x61 is undefined in EBCDIC",discussion_participation
+"There's a lot of complexity in this code.  Is it worthwhile to document why the `referenceCount() == 1` check is required here in a comment?
+
+Also the `n->getFirstChild()->getOpCode().isCall()` check must already be `true` due to the if statement on line 2177 that includes this exact condition.  Can this if condition be simplified?",discussion_participation
+"I added a comment to specify we are only interested in the first reference to the call.
+
+I agree, this section of code has grow to be quite complex recently, as it must identify and prepare for all possible OSR points, but the `n->getFirstChild()->getOpCode().isCall()` won't always be `true`. Other types of OpCodes are managed by this section of code.",discussion_participation
+You're right.  I misread the code above ,discussion_participation
+"So the logic here is that we are generating IL and so when we generate code for the call node tree top, it must have a reference count of 1 ""currently"" even if it's reference count could become more than 1 ""eventually"", correct ?
+
+In which case I'm a bit worried if we are 100% sure that there is not some situation in which a second reference to the call node could have been created before the treetop node for the call node was created; a secondary worry is that in the event of such a reference being innocently created would result in a functional bug in the future (missing pending push stores). 
+",discussion_participation
+"This is a valid concern. Calls must be placed under their own tree, as they have side-effects, however, there is nothing to guarantee the call's node is processed by `genTreeTop` before being referenced under another node.
+
+I cannot find a point where `genInvoke` or one of its callers are managing several nodes that could potentially reference the call. Moreover, in testing, only `checkcast` has failed this check so far, which is the desired effect.
+
+I can understand if the evidence above is not sufficient, or if this is not a restriction on IlGen we wish to make. Another potential approach might be to use a checklist on the node index or their BCI, but this would incur additional overhead.",discussion_participation
+I'm not concerned about the overhead of a checklist solution if it results in a more robust solution. So I would suggest exploring that option at least to see what it looks like rather than commit this change as it is.,discussion_participation
+"A stack allocated node checklist has been added. In testing, it behaves the same as the reference count check and should be more robust.",discussion_participation
+Thanks this looks good to me now but it's probably good to get @andrewcraik to review again since it's changed since he looked at it last.,discussion_participation
+@joransiu I updated the code to do what I should have done from the start... sprintf the data from core as character data and then convert it via atoi(). z/os kinda had to do the same thing although the data is already sprintf()'ed into uname. Then the checks work; otherwise they would fail. ,discussion_participation
+Should this not be outside the 64-bit ifdef?,discussion_participation
+Good point - updated in new commit,discussion_participation
+Use `Paths.get(url.toURI()).toFile()` instead of function.,discussion_trigger
+"Likely clearer to name this `HELLO_WORLD_SCRIPT`.  If changing this anyway, then I merge the two lines into a single one.
+",discussion_participation
+Why the different naming convention for this `static final String`?  All the others are uppercase,discussion_participation
+"`posns` please void truncated names like this unless they are commonly used / referenced.  It's better for the reader of the code if this is called `positions` as they don't have to guess at the meaning of the name.
+
+The use of `env` earlier is fine though as its a very common abbreviation.",discussion_participation
+Why `Integer` for this argument when `int` is used for all the others?,discussion_participation
+"If the exception is thrown, then the test will fail and the stack trace will be available unless we're using a custom test runner of some sort?
+
+This code isn't necessary - let the test throw and the built in mechanisms deal with unexpected exceptions.",discussion_participation
+"Using http://download.java.net/java/jdk9/docs/api/java/nio/file/Files.html#copy-java.nio.file.Path-java.nio.file.Path-java.nio.file.CopyOption...- would avoid having to create the FileOutputStream yourself, avoid the delete() call, etc.",discussion_participation
+"Is the only difference between the two tests the jar file being validated?  If that's the case, can you create a common helper that does 90% of the work and is passed the path to the Jar file the ProcessBuilder should use?",discussion_trigger
+Okay.,acknowledgement
+Okay,acknowledgement
+Fixed.,acknowledgement
+"Missed that and a bunch of others.  Fixing.  Note that some need to be Integers for the benefit of assertEquals(Object, Object);",discussion_participation
+It's generally better to group like kinds of variables together.  So the `static final` fields would be grouped together and the mutable ones would be a separate grouping.  It makes it easier to find them when reading the code.,discussion_participation
+"Please don't add `@SuppressWarnings(""boxing"")`.  Just fix the warnings =)",change_request
+"Please don't add `@SuppressWarnings(""boxing"")`.  Just fix the warnings =)",change_request
+"Please don't add `@SuppressWarnings(""boxing"")`.  Just fix the warnings =)",change_request
+Just let this throw.  The test framework will automatically fail the test for you.,discussion_participation
+Just let this throw.  The test framework will fail the test for you,discussion_participation
+nitpick: unnecessary blank lines,discussion_trigger
+Just let this throw - the test framework will fail the test for you,discussion_participation
+Don't suppress warnings.,change_request
+Same as above,same_as
+Same as above,same_as
+same as above,same_as
+same as above,same_as
+same as above,same_as
+"When breaking a line like this, break it at a logical point:
+```
+HashMap<String, Integer> posns = checkArguments(actualArguments,
+                new String[] {javaToolOptionsArg, ibmJavaOptionsArg, DASH_D_CMDLINE_ARG, fooBar, longProp});
+```",discussion_trigger
+"Also, please don't use names like `posn`.  Stick with common abbreviations or full words.",discussion_participation
+"But I lose the context, i.e. the problematic URL.  That's why I catch and rethrow.",discussion_participation
+Okay.,acknowledgement
+Okay.,acknowledgement
+Okay.,acknowledgement
+Okay.,acknowledgement
+Okay.,acknowledgement
+Okay.,acknowledgement
+Okay.,acknowledgement
+Okay.,acknowledgement
+"I was missing the ""final"".",discussion_participation
+Please see response below.,change_request
+Formatting - tabbed too far,discussion_participation
+"Since this function is being changed anyway, can you fix the indenting on this `}`?",discussion_participation
+This exception should never occur in practice given that the test runs and passes before it's merged.  This additional try/catch is extra code making the intent of the test less clear.,discussion_participation
+"`Integer.valueOf(int)` is usually a better choice as it avoids allocation for ints in the cached range: https://docs.oracle.com/javase/9/docs/api/java/lang/Integer.html#valueOf-int-
+
+This is fine here though.",discussion_participation
+Cool.  Thanks.,acknowledgement
+"Oops. Indentation fixed.
+Catch block removed.",acknowledgement
+Done.,discussion_participation
+Removed.,discussion_participation
+Mark this method as `final` if possible.  It means the JIT won't have to guard the callsites against future class loads,discussion_participation
+Is there a test case that shows that the `operationNotSupported()` cases should trigger initialization?  Applies here and throughout the file.,discussion_participation
+"A little eager with the ""search-and-replace"". I'll write a test case.",discussion_participation
+"I wrote a test case and ran it on HotSpot. It appears that HotSpot initializes the class on lookup, and not on invocation as the API specifies.
+
+I've updated this implementation to not initialize the class if it's not used (i.e. if we throw an exception). This is already the behaviour when we throw `UnsupportedOperationException` for mutating access modes on final fields.",discussion_participation
+Fixed,acknowledgement
+Please include the behavior when classlib.properties isn't found.,discussion_participation
+"You can use B7 for the value, but the #define needs a better name, like J2SE_18_3",discussion_participation
+"There appears to be a non-ascii character before ""J2SE_LATEST""",discussion_participation
+Please include the behavior when the release file isn't found.,discussion_participation
+"This is a better description for @return, but add the behavior when classlib.properties isn't found.",discussion_participation
+Please update the @return as per the comments on getVersionFromClasslibPropertiesFile().,change_request
+Please update the @return as per the comments on getVersionFromClasslibPropertiesFile(). jvmSEVersion is an internal implementation detail.,change_request
+If this change was a separate Pull Request I would have merged it. It doesn't need to be mixed in with the unrelated changes to determine the java version.,discussion_participation
+"To fix `Java 18.3` compile/build errors, this `j.l.i.LambdaForm.Kind` enum change need to be applied with other part of this pull request. Agreed, this change can be in a separate PR for quick reviewing/merging. Created https://github.com/eclipse/openj9/pull/377.",discussion_participation
+"`J2SE_18_3` was my initial choice, just felt it is easy to confuse with `J2SE_18`.",discussion_participation
+"I don't like this statement, its not necessarily obvious what ""jvm SE Version value"" is. I think it would be clearer to say 'J2SE_xx | J2SE_SHAPE_xx' or 0 is returned, where xx is the value found via the configuration file. This feedback also applies to the other functions in this pull request.",discussion_participation
+"We can brainstorm to find a better name. 
+J2SE_2018_3 ?
+",discussion_participation
+How about `JAVA_18_3` which differentiate from earlier name conversion `J2SE_xx`?,discussion_participation
+"Then its not or less obvious that JAVA_* and J2SE_* are related constants that are used interchangeably. Since 18.3 is short form for March 2018, I figure using 2018 would be clear and could not be confused with 18 meaning Java 8.",discussion_participation
+"@We are using this definition to differentiate implementations in the code like ""if (J2SE_VERSION(vm) >= J2SE_19)"". J2SE_B7 would be larger then any of them (the check uses unsigned, does not it?) including 1.9.",discussion_participation
+`J2SE_2018_3` works for me.,discussion_participation
+"@dmitripivkine right, that's the purpose, `Java 18.3 (0xB700)` should be superset of `Java 9 (0x1900)`.",discussion_participation
+What we are going to do with Java 10 (0x1A00 I assume) ?,discussion_participation
+"`Java 18.3` is `Java 10` (the next version we thought). 
+https://mreinhold.org/blog/forward-faster
+https://blogs.oracle.com/java-platform-group/faster-and-easier-use-and-redistribution-of-java-se",discussion_participation
+"Changeset has been updated, pls have another look.",change_request
+This can be more simply expressed as `VERSION_MAJOR ?= 9`; there's no need for `ifndef`.,discussion_participation
+Updated with comments.,acknowledgement
+"I don't think `VERSION_MAJOR` will always be defined on the command line (in all recursive calls to make), so the definition needs to use `?=`, not `:=`.",discussion_participation
+I have been convinced that `:=` is fine (perhaps even preferred).,discussion_participation
+Using `sizeof(JAVA_VERSION_8) - 1` avoids the runtime function call to `strlen`.,discussion_participation
+Fixed. Pls have another look.,acknowledgement
+"To me, it looks a bit funny if you do it that way, but this could just be the way that my brain likes repetition close together. 
+",discussion_participation
+Would the code be more clear if we reduce the scope of `constOp` now and push it closer to its use?,discussion_participation
+This code probably belongs in the caller.  ,discussion_participation
+"Can a more specific error message be added?  Ideally highlighting the class that fails the access check?
+
+And there should be a tracepoint here as well.",discussion_participation
+Pls put the rvalue on the left for inequality comparison. ,change_request
+"This code block setting exception with `lookupSigString` seems to be used in quite a few other places as well, can it become a helper method?",discussion_participation
+"I changed the exception string code, it uses illegalAccessMessage(...) now",discussion_trigger
+"fixed
+",acknowledgement
+Perhaps it should be in `CPPFLAGS` too?,discussion_participation
+I should've seen that.  Done.,discussion_participation
+Please include that this is the case in Java 9 up - 8 and earlier will have the sun.misc.Unsafe as the native.,discussion_participation
+Please format this for doxygen,change_request
+This is obvious from the code.,discussion_participation
+formatting,discussion_participation
+redundant - the comment belongs with the specific list of enum entries that have the special handling. so please move this down there / incorporate into the other ocmments you added there,change_request
+This should either be properly doxygen'd or the comment moved into the method body and not put in the place where doxygen would go.,change_request
+I don't think these locals are necessary node->getSymbolReference()->getSymbol()->castToMethodSymbol() should be a fine chain if you need to test native-ness. Do we need to worry about a NULL return from castToMethodSymbol()? Move any locals necessary for null checking down near the use rather than declaring them up here.,discussion_trigger
+I thought there was a requirement to keep decls at the top of the block in order to keep some older compilers happy?,discussion_participation
+"True for C, but not so for the version of C++ used in the compiler. You could create a block with {}s to limit the scope if you wanted to.",discussion_participation
+"Lines 89 and 90 say provide graphSpecs (plural), but we only ever want a single spec to be supplied at a time, so less confusing to say ""Please provide graphSpec""",discussion_participation
+"This is making an assumption on position and existence of a spec.gmk which I don't think is the case for all uses, for example a compilation where openjdk extensions do not exist.",discussion_participation
+Makes the asumptions that javaN is available on all machines that utilize run this code which may or may not be the case.,discussion_participation
+"That spec.gmk exists inside the build/linuxetc directory, and that file definitely exists on a Hotspot build I have. It exists in that directory, with the variable in it.
+
+Note that buildj9tools.mk is copied two layers deeper than spec.gmk (build/linuxetc/vm/sourcetools), so the ../../spec.gmk should work, and I'm not aware of a Java where that is not the case.",discussion_participation
+"It might be reasonable to make that include conditional:
+```
+ifdef SPEC
+include $(SPEC)
+endif
+```",discussion_participation
+"Sure. We should put in a default for VERSION_SPECIFICATION if we can't include spec.gmk. If you plan to build java 8 with openj9, I recommend setting the default VERSION_SPECIFICATION value to 7.",discussion_participation
+Why could we not use the default -source and -target values for either java7 or java8 sdk used to compile?  Do this cause some of of problem?  I don't see why spec level details cannot be removed and use the JAVA_BIN passed from where its called from ( runtime/buildtools.mk ).  ,discussion_participation
+"If we're considering changes here, I think it's time to stop assuming users have tools called `java8` (or `java7`) available.
+In fact, if `BOOT_JDK` is defined, we should simply use it instead of looking elsewhere.",discussion_participation
+"As it is currently written, `VERSION_SPECIFICATION` defaults to 7.
+The version requirement is dictated by the source files we need to compile (which was recently downgraded from 8 to 7). I don't see why we can't just always set `-source` and `-target` to 7.",discussion_participation
+This comment may need be updated as well.,discussion_participation
+@0dvictor  Added the condition for #if in comment as well. ,discussion_participation
+"Do you think reordering `deps` and `returnReg` would be more intuitive given that we have an API above defined as `buildDirectDispatch(TR::Node *callNode, TR::Register *returnReg)`? The order of parameters may then be consistent.",discussion_participation
+"Thanks for pointing this out, It does look more intuitive the way you said.  Let me try and change it. 
+Currently we are encountering following uses of the interface. 
+```
+1. buildDirectDispatch(node) -> Standard API
+2. buildDirectDispatch(node, register) -> If result register is already allocated
+3. buildDirectDispatch(node, &deps, register=NULL) -> It is called within ICF and can be used same if we have already allocated register)
+``` ",discussion_participation
+"@r30shah I understand we cannot get away without three overridden functions. All I was pointing towards was that if we have possible permutation of three parameters `A`, `B`, and `C` defining three APIs as:
+
+```
+foo(A);
+foo(A,B);
+foo(A,B,C);
+```
+
+May be more intuitive for the user looking for the appropriate API to use than what we have now, which is:
+
+```
+foo(A);
+foo(A,B);
+foo(A,C,B);
+```
+
+i.e. `B` is not consistently declared as the second parameter in two of the APIs. Defining a consistent parameter order may help the user to look for a specific API as the APIs evolve and grow. Take a look at `generateS390MemoryReference` as an example here:
+
+https://github.com/eclipse/omr/blob/b4feac5d4f5380845c22e47e4268a934b8498a00/compiler/z/codegen/OMRMemoryReference.hpp#L461-L474
+
+The parameter ordering is not consistent at all. The `cg` parameter sometimes comes first, sometimes second, sometimes last, etc. and there are 13 such overloads. Do we believe a user may have an easier time finding the right API to use if all the parameters were consistently ordered?",discussion_participation
+"@fjeremic I got your point. And what we have `generateS390MemoryReference` is really inconsistent and I agree with the point that user would have difficult time to find correct signature to call. 
+I would say this case is little different as neither `TR::Register*` nor `TR::RegisterDependencyConditons**` is consistently second parameter. 
+I want to be able to call 
+`buildDirectDispatch(node)`
+`buildDirectDispatch(node, &deps)`
+`buildDirectDispatch(node, register)`
+`buildDirectDispatch(node, &deps, register)`
+And the way I achieve this is by declaring function like,
+`TR::Register * buildDirectDispatch(TR::Node *node, TR::RegisterDependencyConditions **deps, TR::Register *reg=NULL`
+This was I can call the same function `buildDirectDispatch(node, &deps)` with reg initialized to `NULL` as per declaration.
+And Declared `TR::Register *buildDirectDispatch(TR::Node *node, TR::Register *reg)` is used to call dispatch function without dependency conditions.",discussion_participation
+"I see, so there are four permutations. I have overlooked the fact that in `buildDirectDispatch(node, register)` the `register` parameter does not have a `NULL` default. Thanks for the explanation @r30shah!",discussion_participation
+"Keith is correct in that PREV_JAVA will currently default to 7.
+
+Also, as for the conditional, gnu.org says:
+
+If you want make to simply ignore a makefile which does not exist or cannot be remade, with no error message, use the -include directive instead of include, like this:
+
+\-include filenamesï¿½
+",discussion_participation
+Should `**Get the source**` be a link to the Get the Source section?,discussion_participation
+Please remove the `rm -rf ....` line.  Users don't want their APT package listings deleted on their machines.  This is only done in Docker to keep the images small.,discussion_participation
+`contain` -> `contains`,discussion_trigger
+"We should say something like:
+``` Download and setup **freemarker.jar** into a directory.  The example commands use `/root` to be consistent with the Docker instructions.  If you aren't using Docker, it's better to store the freemarker.jar in your home directory.```
+
+As putting files in /root isn't a great practice. ",discussion_participation
+Is there an issue (either on OpenJ9 or the extensions repo) to fix this?  If so we should link to it.,discussion_participation
+"Please remove this section - this will be stale the first time the `yum_install_aix-ppc64.txt` file is updated.  Also, we don't list the additional packages pulled in when doing an `apt-get` so we don't need to do this here either.",discussion_participation
+"I did try to make this a link initially but gave up. The normal link notation for headers doesn't seem to work [Section title](#section-title), possibly because there is a ""2."" in there. I can continue to work on this later. Solution is probably to embed some HTML tags, although not terribly nice.",discussion_participation
+Removed.,discussion_participation
+Fixed - thanks.,acknowledgement
+Agreed. I've made these changes.,discussion_participation
+"This section was suggested by @mgaudet in issue 23 of the eclipse/openj9-website repo.  I don't know that there is a related issue, but perhaps Matthew can chip in?",discussion_participation
+Done,discussion_participation
+"Use the following: `[Get the source](#2-get-the-source)` to link.
+
+The rules for converting to a label are in https://stackoverflow.com/a/45508928/5029186",change_request
+Issue is https://github.com/ibmruntimes/openj9-openjdk-jdk9/issues/34,discussion_participation
+Thanks @mgaudet. Issue number added.,discussion_participation
+Thanks for finding the solution @DanHeidinga. Link now added.,change_request
+"Right -- the link has to be `https://github.com/ibmruntimes/openj9-openjdk-jdk9/issues/34` 
+
+(Github collapses internal links into identifiers that are easier to read, but do not function within markdown documents)",discussion_participation
+should we use `ppc-64_le` instead of `le`?,discussion_participation
+"you can move opening ""{"" down outside ""if defined"". With this you can avoid ""if defined"" on closing bracket.",acknowledgement
+please remove extra space (J9JavaVM *vm),discussion_participation
+J9VMThread *currentThread,discussion_participation
+J9JavaVM *vm,discussion_participation
+J9MemoryManagerFunctions *mmFuncs,discussion_participation
+Monitor should be initialized for Java 9 only. Destroying it for java 8 looks ugly,discussion_participation
+Note this variable isn't really needed.,discussion_participation
+Please document parameters and the return value.,change_request
+Can you add javadoc to this function?,change_request
+Can you explicitly test for null? i.e. `if ((NULL != vm->processReferenceMonitor) && (0 != ....)`,discussion_trigger
+Please explicitly test for null,discussion_trigger
+"Can you write this with a single return point - i.e.:
+```
+ + jboolean result = JNI_FALSE;
+ + #if defined(J9VM_GC_FINALIZATION)
+ +J9JavaVM *vm = ((J9VMThread*)env)->javaVM;
+ +J9MemoryManagerFunctions *mmFuncs = vm->memoryManagerFunctions;
+ +if (0 != mmFuncs->j9gc_wait_for_reference_processing(vm)) {
+ +result = JNI_TRUE;
+ +}
+ +#endif
+ +  return result;
+ +}
+```",discussion_participation
+Can you modify this to be a single return point as well?,discussion_participation
+Is this performance critical?  Does it need to be a fast JNI method?,discussion_participation
+"Does this ever need to wait for a GC to complete?  If so, we can deadlock as this method doesn't give up vm access",discussion_participation
+"no, it only waits for processing one reference in slave finalization thread(outside GC cycle), if currently the thread is clearing the reference.",discussion_participation
+"Currently it only is called in nio.Bits.reserveMemory() for java9, but it could be called from 10 times to the maximum as many as the pending reference number in the reference queue if currently the processing references is active. ",discussion_participation
+updated,acknowledgement
+updated,acknowledgement
+updated,acknowledgement
+updated,acknowledgement
+updated,acknowledgement
+updated,acknowledgement
+updated,acknowledgement
+"can not 100% guarantee that the reference processing does not trigger the GC, so remove Fast JNI for waitForReferenceProcessingImpl",discussion_participation
+This comment mixes tabs and space together.  Can you replace the spaces with tabs so the formatting is consistent?,change_request
+Why do we need to retain this old behavior?,discussion_participation
+Build 148 (i.e. vmfarm builds) doesn't have the new exception.,discussion_participation
+This return seems redundant.,discussion_trigger
+Agreed.  Fixed.,acknowledgement
+would also change logger.debug to logger.info - as that information is useful to print to console (where INFO level is our default),discussion_participation
+"ok will add that
+",change_request
+Using \t would be better.,discussion_participation
+What known issue?,discussion_participation
+"typo ""ask""",acknowledgement
+"typo ""ask""",acknowledgement
+"This test doesn't work, the java.specification.version is ""1.8""",discussion_participation
+Fixed,acknowledgement
+Updated comment.,acknowledgement
+Fixed.,acknowledgement
+Fixed.,acknowledgement
+Fixed.,acknowledgement
+"To run testNG test in sanity, we need to update the test group annotation in java as well. `@Test(groups = { ""level.sanity"" })`",discussion_participation
+Thanks.  Fixed.,acknowledgement
+"Is this ID an internal bug #?  If so, please replace it with an id that's meaningful in the open",discussion_participation
+Same request re meaningful id,discussion_participation
+Does this test pass with OpenJ9 builds?  I don't expect the `-internal` to be part of the version number long term.,discussion_participation
+Yes it passes with OpenJ9 builds. There was a time when this wasn't passing without matching `9-internal` but just confirmed that is no longer the case.,discussion_participation
+"Okay. Talking to @renfeiw about what this should be. There are many other similar <featureIds> in the test code.
+Update: I'm just going to remove them since there is no issue created for this PR.",discussion_participation
+Can we drop the `-internal`?  This is a temporary artifact that will disappear when 9 is complete and will lead to unexpected test failures.,discussion_participation
+Yes. It is gone.,acknowledgement
+"```
+$ java -XshowSettings:properties
+....
+    java.version = 9-internal
+....
+```
+This check will return false on current openj9 builds as version is temporarily `9-internal`.  Eventually, this the version will be `9` so the check here should be  `startsWith(""1.9.0"" || startsWith(""9"")`. 
+
+Sorry, I wasn't clear earlier.",discussion_participation
+"Please use a runtime check instead, i.e. like the following
+```
+if (J2SE_VERSION(vm) >= J2SE_19) {
+```",discussion_participation
+Might as well use vm instead of vmThread->javaVM since vm is available.,discussion_participation
+Done.,discussion_participation
+We're not using compile time checks yet.  Please do this with a runtime check at the relevant callsites.,discussion_participation
+This version check shouldn't be necessary - an unknown constant should result in a ClassFormatError.  This would just give it a different message.,discussion_participation
+nitpick: extra `;`,discussion_participation
+This check was throwing an error in the Java 8 builds. The change to CFR_CLASS_ACCESS_MASK was also causing failures.,discussion_participation
+@DanHeidinga is this what you meant for the runtime check?,discussion_participation
+yes,discussion_participation
+Can this comment link to an issue tracking this problem? ,acknowledgement
+"We don't have an issue as the problems were reported in IBM internal builds which make use of the VMWare library mentioned in the comment. The problem, as such, is not present with OpenJ9 build.",discussion_participation
+Does this need to be protected or can it be package private?,discussion_trigger
+"`protected` seems needed by `DelegatingMethodHandle`
+```
+abstract class java.lang.invoke.DelegatingMethodHandle extends java.lang.invoke.MethodHandle {
+  protected abstract java.lang.invoke.MethodHandle getTarget();
+}
+```",discussion_participation
+"a subclass can increase the visibility of a method from package to protected.  As DelegatingMH isn't API, it's free to have a protected method.",discussion_participation
+"Agreed. `getTarget()` can be made to package private which can pass signature tests for `java.lang.invoke.MethodHandle`.
+
+Looked again the initial compilation failure due to removal of this method as following:
+```
+/tmp/bld_369599/openjdk/jdk/src/java.base/share/classes/java/lang/invoke/MethodHandleImpl.java:510: error: method does not override or implement a method from a supertype
+        @Override
+```
+But `MethodHandleImpl` doesn't inherit from `MethodHandle`. 
+```
+abstract class java.lang.invoke.MethodHandleImpl {
+}
+```
+It is the inner classes of `MethodHandleImpl` that attempt to override `getTarget()`
+```
+Compiled from ""MethodHandleImpl.java""
+final class java.lang.invoke.MethodHandleImpl$AsVarargsCollector extends java.lang.invoke.DelegatingMethodHandle {
+protected java.lang.invoke.MethodHandle getTarget();
+}
+....
+final class java.lang.invoke.MethodHandleImpl$WrappedMember extends java.lang.invoke.DelegatingMethodHandle {
+protected java.lang.invoke.MethodHandle getTarget();
+}
+```
+I just realized that J9 has a stub class `DelegatingMethodHandle` which doesn't have `getTarget()`, and inherits it from `MethodHandle` instead.",discussion_participation
+This object should be `const`.,discussion_trigger
+The type should be `const char *`.,discussion_trigger
+fixed.,acknowledgement
+fixed.,acknowledgement
+This needs bounds checking to make sure we don't write outside the array `nameWithSIGPrefix`.,discussion_trigger
+fixed.,acknowledgement
+"This isn't valid C code: declarations must be at beginning of the block.
+(the assignment could move into the initializer of a `for` loop replacing the `while` loop below.)",discussion_trigger
+I think this would be clearer if it used `sigName`.,discussion_participation
+fixed.,acknowledgement
+fixed.,acknowledgement
+"Rather than defining all these `J9_SIG*` macros, I suggest the entries in the table below should be conditional on whether the corresponding signal macro is defined (mapping strings to `J9_SIG_ERR` is not helpful).",discussion_participation
+"The uses of `SIG_NUM` in the expansion of the macro should be enclosed in parentheses.
+It may make sense to convert these macros to static helper functions so the tests for signals can be conditional on whether the corresponding signal is defined.",discussion_participation
+`elseif` can be used here to reduce indentation,change_request
+`sizeof(J9_SIG_PREFIX) - 1` is preferred over a call to `strlen`.,discussion_participation
+fixed.,acknowledgement
+fixed - converted to static helper functions.,discussion_trigger
+fixed.,acknowledgement
+fixed.,acknowledgement
+"For cases where offset is <= -524288, are we relying on long displacement support to generate the correct memory reference offset?  Have we tested that it works for this case?",discussion_participation
+Yes that is precisely what we're relying on. The long displacement logic will effectively generate what we have in the (now deleted) `else` path. This is just code duplication. I've tested on internal builds that this does indeed function as expected.,discussion_participation
+Please remove the whitespace which was added at the end of all of the omrstr_printf(fullversion ...) lines.,discussion_trigger
+"Please use tabs in all the modified code, to be consistent with the rest of the file.",discussion_participation
+The correct length is sizeof(fullversion)-buflen. Similarly for vminfo.,discussion_participation
+"```((0 == bodyType.arguments.length) ```
+This seems like a good candidate for a package private method.  Maybe `MethodType.isNoArgs()` or `hasNoArguments()`?",discussion_participation
+"We generally try to avoid single line if statements as they make it difficult to set breakpoints that only fire if the if is true.  Code like:
+```
+String argList = ""void"";
+if (bodyType.arguments.length > 0) {
+    argList = bodyType.arguments[0].getName();
+}
+```
+is as clear and allows setting a breakpoint on the code in the if.",discussion_trigger
+`(0 == bodyParamTypes.length)` is used on both sides of the if.  Can you pull it out into a local so it's only executed once?,discussion_participation
+Might be worth including the srcDir in the error message.,discussion_participation
+Does the nls directory always exist with the old usage of the tool?,discussion_participation
+"Yes since the input dir == output dir. If it doesnt exist, you will fail earlier when you are scanning for input files in `searchNLSFiles()`",discussion_trigger
+"I think there is a typo here, should be `through` ",acknowledgement
+"I get that use of this function is to find a load node within synchronized region. Let me know if I am wrong here, but in the synchronized region, if a node is branch node or it has a symbol reference but is not a candidate for synchronized field load, for these kind of side effect nodes, this optimization will be disabled, right?",discussion_participation
+"@r30shah yes that is correct. The only exit condition out of the for loop is the `break` statement towards the end (other than reaching the `monexit` that is). If you follow the logic to reach the `break` it reads in English as follows:
+
+If there exists a node in the synchronized region that has a symbol reference or is a branch then unless this node is an indirect load off the synchronized object and no previous such load has been seen then terminate the for loop and return that no candidate has been found. Otherwise return the single load (if any) as the candidate.",discussion_participation
+Fixed in https://github.com/eclipse/openj9/pull/537/commits/f0d6165d233d4ec5093534156a4182373c810679,discussion_participation
+@fjeremic Thanks for the explanation. Changes looks good to me. ,discussion_participation
+Should we provide the actual download link: https://my.visualstudio.com/Downloads?q=visual%20studio%202013&wt.mc_id=o~msft~vscom~older-downloads,discussion_participation
+"Is this tar command intended to put the `freemarker.jar` into the /cygdrive/c/temp?  It doesn't seem to work and is different than the tar commands for the other platforms.
+
+AIX: `tar -xzf freemarker.tgz freemarker-2.3.8/lib/freemarker.jar --strip=2 \`
+linux: `tar -xzf freemarker.tgz freemarker-2.3.8/lib/freemarker.jar --strip=2`
+
+Either this or the configure command below need to be updated",discussion_participation
+"To unpack freemarker:
+`
+tar -xzf freemarker-2.3.8.tar.gz freemarker-2.3.8/lib/freemarker.jar --strip=2
+`
+
+If we want the commands to be identical on all platforms than:
+- to download freemarker:
+`
+wget https://sourceforge.net/projects/freemarker/files/freemarker/2.3.8/freemarker-2.3.8.tar.gz/download -O freemarker.tgz
+`
+@SueChaplain  note the output file `-O freemarker.tgz`
+
+- to unpack:
+`tar -xzf freemarker.tgz freemarker-2.3.8/lib/freemarker.jar --strip=2`
+",discussion_participation
+"Where possible, the instructions should be the same across all platforms.  Longer term, it makes sense to have a single set of instructions with only the platform setup being different.",discussion_participation
+"I updated the wget command for freemarker, modified the tar command to put freemarker.jar in the root, and reverted the change I made to configure that previously fixed the path. 
+
+It's a shame that we still have differences in the configure between platforms, but I agree that we should try and create platform specific sections for preparing your build environment and try to merge the other sections. Would be nice to see ARM and z/OS before doing this, but not sure what progress is being made for these.",discussion_participation
+"I think parentheses are needed here, i.e. it should be
+```
+#if (defined(LINUX) || defined(OSX)) && !defined(J9ZTPF)
+```",discussion_participation
+"Can you clarify how this is a `fix`?  A || B && !C is the same result with or without the bracket.
+
+Further, ZTPF logically connects to LINUX, not to OSX.  If you were going to change this, it would be 
+`#if ((defined(LINUX) && !defined(J9ZTPF)) || defined(OSX)`",discussion_participation
+"`&&` has higher precedence than `||` so the old condition was equivalent to
+```
+#if defined(LINUX) || (defined(OSX) && !defined(J9ZTPF))
+```
+@DanHeidinga If ZTPF is more closely related to LINUX, then your proposal would be better.",discussion_participation
+Thanks for clarifying the precedence rules.  That's great info to include when creating this kind of PR in the future.  Thanks @keithc-ca ,discussion_participation
+"Does it make sense to just include the attachAPI related java files? TestUtilities will have utils for other projects in the future, so it is unnecessary to build entire TestUtilities project.",discussion_participation
+"Given that TestUtilities is small at present and should not grow quickly (compared to the test directories), I suggest including the whole thing in the interest of simplicity. We can refactor later if it becomes an issue.",discussion_participation
+Variable name and command does not match.,discussion_trigger
+"Instead of writing detailed message, please use variable $untar.",change_request
+"You can dong unzip, but message is untar. Instead of writing detailed message, please use variable. Otherwise, it is very easy to become out of sync.",discussion_participation
+all the uncompress process is for get the final asmtools.jar. The archived file is `asmtools-6.0.tar.gz` but the file we want is `asmtools.jar`,discussion_participation
+updated,acknowledgement
+updated,acknowledgement
+"Personally, I think if we include the whole project, it will be harder for us to identify the reference between test projects and TestUtilities during refactoring time. However, if including attachAPI related java files will make the code too complicated, then I am ok with the change.",discussion_participation
+"Is this only invalid for Java 9?  If its invalid everywhere, should it be deleted?",discussion_trigger
+"This test file `LookupInTests` in Jsr292 folder only applies to Java8 and Java9 lower than b148. There is another `LookupInTests` in OpenJ9_Jsr_292_API folder which has been updated for Openj9. 
+
+As we don't care b148 anymore, once another PR (https://github.com/eclipse/openj9/pull/281) merged into OpenJ9_Jsr_292_API, I think these two project should be merged together by using src80 and src90 folders to separate codes for different versions.",discussion_participation
+Thanks for the clarification on the planned approach @TianyuZuo!  Is there a overall issue tracking this plan and the follow-on work?,discussion_participation
+"Lan
+ Iï¿½d like to hear more about how you would like to see the directory structured.
+Have multiple source directories (e.g. AttachApi, StackWalker) in the TestUtilities project and add them selectively to the test projects (e.g. Java9AndUp)?  I could go for that.",discussion_participation
+"Lets remove this comment, it won't be relevant after uma is no longer in use, and it was already remove from the previous methods in this class.",discussion_participation
+its preferred to use {} brackets to avoid potential problems in the future if the code is modified.,discussion_participation
+Please add a space in `){`,change_request
+Please add a space in `){`,change_request
+Please add a space in `if(`,change_request
+There is some extra whitespace after `if{`,discussion_participation
+"Missing space in ""){""",discussion_participation
+"Missing space in ""){""",discussion_participation
+Is this supposed to use the `void*` overload? Seems to be loading an address?,discussion_participation
+This does not look correct. `uint32_t` is 32-bits. The return value of `getHeapSizeForBarrierRange0` on a 64-bit target will be 64-bit. Is this not a truncation operation?,discussion_participation
+Is this supposed to use the `void*` overload? Seems to be loading an address? Similarly on the next change using `profiledClassesList`.,discussion_participation
+Is there a typo here? Looks like we are mixing `uintptr_t` and `uint32_t` when doing the OR.,discussion_participation
+"Yes, but I believe this is achieving that because `guessClassArray` is a `TR_OpaqueClassBlock*` so that maps to `void*`.",discussion_participation
+"I do not believe my change here causes a functional change. Let me explain. We have 3 variables of interest:
+`heapSize`
+`heapBase`
+`heapSum`
+
+They are only used in:
+`generateRILInstruction`
+`generateS390CompareAndBranchInstruction`
+
+Before my changes `generateRILInstruction` converted the `uintptrj_t` immediate to an `int32_t` in the `S390Instruction` constructor, so all my change does here is move that conversion further ""forward"".
+
+`generateS390CompareAndBranchInstruction` takes an `int32_t` as well, so again I'm just moving the conversion ""forward"".
+
+I agree this seems wrong, but perhaps this is a bug in the existing code? Do you have any suggestions?",discussion_participation
+Similarly as above `profiledClass` is a  `TR_OpaqueClassBlock*` so this will call the `void*` overload as intended.,discussion_trigger
+"Looks like `heapSize` and `heapBase` are only used withing the `if (constantHeapCase)` condition. This condition is defined as:
+
+```
+bool constantHeapCase = ((!comp->compileRelocatableCode()) && isConstantHeapBase && isConstantHeapSize && shiftAmount == 0 && (!is64Bit || TR::Compiler->om.generateCompressedObjectHeaders()));
+```
+
+Noteworthy here is `shiftAmount == 0` and the subsequent dual check for `!is64Bit`. This means we only enter this `if` condition if our heap fits within 32-bit. 
+
+The only use of `generateRIL` is within the `if` condition so it would be incorrect to change the type of `heapSize` and `heapBase` to `uint32_t` since the variables are declared outside of the `if` condition.
+
+We seem to have two choices (unless there are more?):
+
+1. Lower the definition of `heapBase` and `heapSize` to be inside of `if (constantHeapCase)`, at which point their values are guaranteed to be 32-bit (we should probably note this via a comment)
+2. Keep the definitions where they are, revert the type back to `uintptrj_t` and explicitly cast to `uint32_t` in the `if` where the variables are being used within `generateRILInstruction`
+
+Do we agree?",discussion_participation
+"Not a typo, although  see now the `static_cast` on the `orFlag` is unnecessary since it's declared as a `uint32_t`.
+
+You can't use safe casting to cast `classAddress` to a `uint32_t`. It will complain:
+`error: cast from 'TR_OpaqueClassBlock*' to 'uint32_t' loses precision`
+
+The `OR` promotes the `orFlag` to a 64bit width so I needed to cast the result back down to `uint32_t` so it matches the overload.",discussion_participation
+Agreed. Going with option 1) with a comment.,change_request
+"Thanks, was just making sure this was well thought out and it is! Yes the cast on `orFlag` is unnecessary.",discussion_participation
+Is `idiomRecognition` intended to be duplicated on s390 or should it have been deleted from the #ifdef block?,discussion_participation
+This shouldn't be duplicated it should be pulled out of the ifdef,discussion_participation
+Good catch @DanHeidinga. It should **not** be duplicated.,discussion_participation
+Created an issue to tracking this plan. https://github.com/eclipse/openj9/issues/607,discussion_participation
+"To clarify, TestUtilities is only for utility classes used by multiple test projects.  Utilities used be a single test project should live in that project.",discussion_participation
+The method comment needs updating to match.,discussion_trigger
+Updated.,acknowledgement
+It would be better to load a class from an exported package to avoid export problems in the future when the default access controls are changed.,discussion_participation
+Will replace it with `java.rmi.AlreadyBoundException` instead.,discussion_participation
+Shouldn't the fix go into loadClassHelper() so other callers of loadClassHelper() get the same benefits?,acknowledgement
+"Do you mean moving this code snippet from `loadClass (className)` and `loadClass(module, className)` into `loadClassHelper()`?
+`BOOT_LOADER` extends `BuiltinClassLoader` which overrides `loadClass(className, resolveClass)`, hence `BOOT_LOADER.loadClass (className)` will invoke this overridden method and miss the check for bootstrap classloader within `loadClassHelper()` hence can't call `VMAccess.findClassOrNull(className, bootstrapClassLoader)` for bootstrap classes. I think this was the main reason we put this checking code snippet within `loadClass (className)`. This PR adds the check for `loadClass(module, className)` as well.
+This is for bootstrap classloader class loading, other classloader use scenarios don't need this check.",discussion_participation
+This can just be merged with the line below to assign to it at creation,discussion_trigger
+The value doesn't line up with the others.,discussion_trigger
+Please add a space in `){`,change_request
+Please add a space in `){`,change_request
+Pls add a new line at the end.,change_request
+"Please don't use internal tabs, as the values don't line up with all tab settings.",change_request
+Please indent the final line of the comment like the preceding lines.,change_request
+"Please just call it musl and only include below what is between the horizontal lines, but remove the lines.",change_request
+nitpick - why assign null here to assign it's real value on the next line?,discussion_trigger
+Same comment about single line if,same_as
+"`and there must not be a blank line following the footer.`  Isn't this covered by the text a few lines down?
+
+>Remember, if a blank line is found anywhere after the `Signed-off-by` line, the
+`Signed-off-by:` will be considered outside of the footer, and will fail the
+automated Signed-off-by validation",discussion_trigger
+did you want me to go through the rest of the function / file or just submit the swap for this one line for now ? ,discussion_trigger
+"OK, will remove the `.copyrightignore` file, but this then leaves the file empty other than the comments. Do you have any files / paths that should be added to ignore.",discussion_participation
+This is definitely not allowed - no // comments in .h files.,discussion_trigger
+can you please revert the changes in this file,change_request
+I renamed the flag uma_windows_rebase.,acknowledgement
+This shouldn't be necessary (nor have any effect): all the files should be of the form `./subdir/xxx.hdf`.,discussion_participation
+"As discussed, I need to open the stream so I can shoot the shell script into the file.",discussion_participation
+"Shouldn't this be inside the if block?  As I read it now (and please correct me if I'm wrong), it will always write the file.",discussion_trigger
+Same reply as above. I want to record the path for diagnostic purposes.,same_as
+Does this need to be commented out?,discussion_trigger
+"The issue link sent me to a ""page not found"" error page.  Did it work for you?",discussion_participation
+"Actually I did:
+Paths.get(jarUrl.toURI()).toFile().toPath()
+because Files.copy() takes a Path not a File.
+This pull request is getting pretty old, so I should retest.  Please stand by.",discussion_participation
+I'm fine with an initially blank file. Pete or others can add to it in the future but at least the template is there with instructions.,discussion_participation
+"""add"" should be ""addr"".
+This comment is not proper English. ",change_request
+"The readline() will block until there is a newline, but the target process emits complete lines, so any blocking will be brief.  The purpose of the code was to handle the case where stdout would close and stderr was still open but not receiving anything.",discussion_participation
+"We want to ensure that the exception is logged in the trace buffer so the exception should be level=1, not 5.  The enter / exits can stay at level 5.",discussion_participation
+`setNativeOutOfMemoryError` should this have been removed like the call above?,discussion_trigger
+We should never add `@SuppressWarnings` to code.  A PR should either ignore existing warnings or actually address them.  Suppressing them just hides the problem,discussion_trigger
+Same comment for the null check on `vm->processReferenceMonitor`,same_as
+"If its only a copyright check failure on a file that's been moved but not modified, then I agree with Jason that we're OK to ignore the check.  We haven't modified the code, so we don't need to change the date.",discussion_participation
+"Ok, So checked how it looks if we change the order
+```
+TR::Register* buildDirectDispatch(TR::Node *node, TR::Register *register, TR::RegisterDependencyConditions ** deps = static_cast<TR::RegisterDependencyConditions**>(NULL));
+
+TR::Register * buildDirectDispatch(TR::Node *node)
+{
+return buildDirectDispatch(node, NULL, static_cast<TR::RegisterDependencyConditions**>(NULL));
+}
+TR::Register *buildDirectDispatch(TR::Node *node, TR::RegisterDependencyConditions **deps)
+{
+return buildDirectDispatch(node, NULL, deps);
+}
+``` 
+Even in this way we are ending up with 3 overridden functions. I doubt if this makes that more difference.
+",discussion_participation
+Nitpick: `check` -> `Check`,change_request
+cygpath can convert all paths in a single invocation: `foreach` is not needed.,discussion_trigger
+Already replaced with Objects.isNull(),discussion_participation
+Can you add a comment here to describe why this is the correct behaviour?,change_request
+"My previous comment here was ""This comment implies that calling setProperty with a null value will work, however it throws NPE."" to which the response was ""True. Fixed"". However I don't see any change.",discussion_trigger
+Comment updated.,acknowledgement
+I'm not sure of this change.  Can you comment on why it's necessary?,change_request
+Removed comment in 98f8017,acknowledgement
+"Pls be specific about the argument, `targetClass` or `callerLookup`.",change_request
+"Ignore my comment, I forget compressref case.",discussion_participation
+"Sorry, ignore my comment, doesn't make any sense.",discussion_participation
+A comment about why this can be NULL is probably warranted,change_request
+This should be proceeded by a comment that includes the K0670 and the message using preprocessor tags.  Search for other uses of the com.ibm.oti.util.Msg class to see how the comment should look,change_request
+This comment was lost.,acknowledgement
+"Lets remove this comment, it won't be relevant after uma is no longer in use.",discussion_participation
+"It's invalid, thanks for pointing it out. Error message is updated.",acknowledgement
+maybe comment out this check since and only have the else case since we will always be returning true,discussion_trigger
+coder() does so the initialization was right - I take back my comment it should be correct.,discussion_participation
